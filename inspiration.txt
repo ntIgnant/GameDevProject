@@ -5,3 +5,15 @@ binding of isaac
 super meat boy
 clash royale
 rhythm game (Friday Night Funkin, Geometry Dash, osu)
+
+STORY (PLOT):
+
+- "An Old Guy trying to fix his life"
+    One day, an old man dies (in a car crash or something). After his death, he experiences flashbacks of
+    his life, and "something" (some god?) gives him the opportunity to change certain events, which are 
+    his biggest regrets.
+
+    Each room would represent one of the old man’s regrets/traumas.
+
+
+
