@@ -1,7 +1,7 @@
 IDEAS:
 
 buckshot roulette
-binding of isaac
+binding of isaac <-
 super meat boy
 clash royale
 rhythm game (Friday Night Funkin, Geometry Dash, osu)
@@ -15,5 +15,24 @@ STORY (PLOT):
 
     Each room would represent one of the old man’s regrets/traumas.
 
+
+- "The lost Package"
+    A character that spends all its day at home, ordered something online, but that package never arrived. The only clue
+    of the location of the package, is the employee that was meant to deliver it (Pablo or idk), so for the first time
+    in years, the character leaves home and starts looking for Pablo in order to find the package (beating all the delivery
+    guys in the process and getting random items to help hi/her).
+
+    plot twis - the package is something really stupid
+    
+- "The Internet goes Down"
+    A guy that is always at home, but his internet goues down. So he goes outside and random things happen (the different
+    levels).
+
+- "Tutorial HELL" (lowkey good name)
+    So one guy tries a new videogame, and he is playing the tutorial, but then the tutorial keeps adding stuff (mechanics 
+    or enemies) so the player can't stop playing.
+
+    At the end, once the guy finished the 'tutorial' there is a message saying 'pay $10 to get the full version!' so he
+    sues the game company :)
 
 
