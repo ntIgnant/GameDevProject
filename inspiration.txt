@@ -35,4 +35,9 @@ STORY (PLOT):
     At the end, once the guy finished the 'tutorial' there is a message saying 'pay $10 to get the full version!' so he
     sues the game company :)
 
+ - "Dreamland" 
+After one guy decides to go to sleep weird things happen. Every room represents a dream (or a part of the dream) where random things happen, they can be memories (e.g at a playground, enemies can be toys), wishes (being able to fly idk, getting promoted at work ->enemies can be his colleagues), absurd things (e.g happening in some kind of cloud "city", enemies can be lightning, some weather themed creatures + upside down world (maybe the mechanics can be inverted)) 
+The final boss can be the alarm clock, happening in some weird version of his room, the moment he beats it, he wakes up
 
+ - "Murder mistery"
+A detective is called to solve quite the case, almost no evidence was left behind. Considering he is very intelligent and talented in his job, he is able to "see" what happened before the crime (maybe through the victim's pov). Basically he travels in time. Each room represents an event that led to the murder. Enemies can be anything, from the murderers to the obstacles that person had to go through that day ( e.g. something at the office/school etc.) And maybe the final boss can literally be the murderer which after you beat drops a special item, which is his id, so you solve the case and arrest the guy.
