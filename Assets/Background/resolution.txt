@@ -1,0 +1,19 @@
+Canvas Size: 1536 × 1024 pixels
+
+BACKGROUND COLOR PALETTE (still tbd)
+
+PRIMARY BASE
+#2F3542  — Dark Steel (main floor / walls)
+
+SECONDARY BASE
+#596275  — Cool Metal (panels / highlights)
+
+PRIMARY ACCENT
+#3EDBF0  — Tech Cyan (lights / doors / UI glow)
+
+SECONDARY ACCENT
+#5BFF98  — Toxic Green (alien tech / capsules)
+
+TERTIARY ACCENT
+#8A7CFF  — Cosmic Purple (rare glow / atmosphere)
+
