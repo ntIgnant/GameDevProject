@@ -1,3 +1,5 @@
+import os
+
 import pygame
 
 WIDTH = 1280
@@ -6,6 +8,8 @@ HEIGHT = 720
 pygame.init()
 background_color = (252, 252, 255)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+background = pygame.image.load(os.path.join("Assets", "Background", "demo3.png"))
+background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 pygame.display.set_caption('Game name')
 clock = pygame.time.Clock()
 font1 = pygame.font.SysFont('Comic Sans MS', 50)
@@ -13,7 +17,7 @@ font2 = pygame.font.SysFont('Comic Sans MS', 30)
 START_RECT = pygame.Rect(0, 0, 320, 50)
 
 def draw_level():
-    screen.fill(background_color)
+    screen.blit(background, (0,0))
 
 def draw_main_screen():
     screen.fill(background_color)
