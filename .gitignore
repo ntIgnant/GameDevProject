@@ -1,10 +1,10 @@
 # Ignore the following directories
 venv/
-__pycache__/
+
 
 # File types
-*.pyc
+
 
 # Editor Configs
-.vscode/
-.idea/
+
+
