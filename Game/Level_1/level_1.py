@@ -4,12 +4,14 @@ import pygame
 from Game.settings import WIDTH, HEIGHT
 from Game.player import Player
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
+from Game.obstacles import Obstacles
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 
 background = None
 player = None
+obstacle = None
 enemies = []
 walk_frames = []
 
@@ -26,10 +28,13 @@ def load_assets():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies
+    global player, enemies, obstacle
 
     player = Player()
     enemies = [SecEnemyLev1((100, 100), walk_frames),] # a single secondary enemy (for now)
+    obstacle = Obstacles()
+    obstacle.spawn()
+
 
 
 def handle_level_event(event):
@@ -56,3 +61,6 @@ def draw_level(screen):
 
     for e in enemies:
         e.draw(screen)
+
+
+    obstacle.draw(screen)
