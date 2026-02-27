@@ -1,6 +1,7 @@
 # Ignore the following directories
 venv/
 __pycache__/
+Game/Level_1/__pycache__/
 
 # File types
 *.pyc
