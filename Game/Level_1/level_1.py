@@ -5,6 +5,7 @@ from Game.settings import WIDTH, HEIGHT
 from Game.player import Player
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
 from Game.obstacles import Obstacles
+from Game.camera import Camera
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -14,6 +15,7 @@ player = None
 obstacle = None
 enemies = []
 walk_frames = []
+camera = Camera()
 
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
@@ -47,6 +49,8 @@ def update_level(dt, keys):
         return
 
     player.update(dt, keys)
+    camera.update(player)
+
     for e in enemies:
         e.update(dt, player.rect.center)
 
@@ -55,12 +59,18 @@ def draw_level(screen):
     if background is None:
         return
 
-    screen.blit(background, (0, 0))
+    background_camera_frame = background.get_rect(topleft=(0,0))
+    background_camera_frame = camera.apply(background_camera_frame)
+
+    # zooming in and drawing the background
+    background_frame_zoom = pygame.transform.scale(background, background_camera_frame.size)
+    screen.blit(background_frame_zoom, background_camera_frame.topleft)
+
     if player:
-        player.draw(screen)
+        player.draw(screen, camera)
 
     for e in enemies:
-        e.draw(screen)
+        e.draw(screen, camera)
 
 
-    obstacle.draw(screen)
+    obstacle.draw(screen, camera)

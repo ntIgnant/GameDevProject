@@ -16,9 +16,13 @@ class Obstacles:
             rect = pygame.Rect(x, y, self.size, self.size)
             self.coordinates.append(rect)
 
-    def draw(self, screen):
+    def draw(self, screen, camera):
         for rect in self.coordinates:
-            pygame.draw.rect(screen, self.color, rect)
+            
+            obstacle_camera_frame = camera.apply(rect)
+
+            # drawing the obstacle
+            pygame.draw.rect(screen, self.color, obstacle_camera_frame)
 
 
 
