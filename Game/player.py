@@ -30,7 +30,7 @@ class Player:
     def handle_event(self, event):
         pass
 
-    def update(self, dt, keys):
+    def update(self, dt, keys, obstacles):
         dx = keys[pygame.K_d] - keys[pygame.K_a]
         dy = keys[pygame.K_s] - keys[pygame.K_w]
 
@@ -41,8 +41,23 @@ class Player:
             dx /= length
             dy /= length
 
+           #moving left and right logic
             self.rect.x += int(dx * self.speed * dt)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    if dx > 0:
+                        self.rect.right = obstacle.left #player moving right
+                    elif dx < 0:
+                        self.rect.left = obstacle.right #player moving left
+
+           #moving up and down logic
             self.rect.y += int(dy * self.speed * dt)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    if dy > 0:
+                        self.rect.bottom = obstacle.top #moving down
+                    if dy < 0:
+                        self.rect.top = obstacle.bottom #moving up
 
             if dx != 0:
                 self.facing_right = dx > 0
