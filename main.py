@@ -19,7 +19,8 @@ main_menu = True
 while running:
     dt = clock.tick(settings.FPS) / 1000.0
     keys = pygame.key.get_pressed() # listen to keys to be pressed
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    for event in events:
         if event.type == pygame.QUIT:
             running = False
 
@@ -35,7 +36,7 @@ while running:
     if main_menu:
         menu.draw_main_screen(screen)
     else:
-        level_1.update_level(dt, keys)
+        level_1.update_level(dt, keys, events)
         level_1.draw_level(screen)
 
     pygame.display.update()
