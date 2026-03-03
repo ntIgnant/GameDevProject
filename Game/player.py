@@ -46,6 +46,7 @@ class Player:
             self.facing_right = dash_dir.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
 
+    def update(self, dt, keys, obstacles):
     def update(self, dt, keys):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
@@ -61,8 +62,23 @@ class Player:
             dy /= length
             self.last_move_dir.update(dx, dy)
 
+           #moving left and right logic
             self.rect.x += int(dx * self.speed * dt)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    if dx > 0:
+                        self.rect.right = obstacle.left #player moving right
+                    elif dx < 0:
+                        self.rect.left = obstacle.right #player moving left
+
+           #moving up and down logic
             self.rect.y += int(dy * self.speed * dt)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    if dy > 0:
+                        self.rect.bottom = obstacle.top #moving down
+                    if dy < 0:
+                        self.rect.top = obstacle.bottom #moving up
 
             if dx != 0:
                 self.facing_right = dx > 0
