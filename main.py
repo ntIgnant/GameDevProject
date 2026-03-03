@@ -13,8 +13,8 @@ clock = pygame.time.Clock()
 
 level_1.load_assets()
 
-running = True
-main_menu = True
+running = True # boolean for the general game loop
+state = "menu" # this will vary depending on the state of the game [menu, menu_settings, level, etc]
 
 # Global loop of the Game
 while running:
@@ -26,18 +26,19 @@ while running:
             running = False
 
         # Handle options of the main menu
-        if main_menu:
+        if state == "menu":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 action = menu.menu_options_handler(event.pos)
 
-                # Evalueate the action, to check which logic to execute based on the options of the menu
+                # Case when the 'new game' button is pressed | start from level 1
                 if action == "new_game":
                     settings.LEVELS_COMPLETED.clear() # Clear all the completed levels to start a new game
-                    main_menu = False
+                    state = "level"
                     level_1.start_level()
                 
+                # Case when the 'continue / start' button is pressed | start the game from the last level that was completed
                 elif action == "continue":
-                    main_menu = False
+                    state = "level"
 
                     if not settings.LEVELS_COMPLETED:
                         next_level = 1
@@ -53,15 +54,17 @@ while running:
                         level_1.start_level()
 
                 elif action == "settings":
-                    print("Settings Menu should be displayed and allowed for value modification")
+                    state = "menu_settings" # change state to menu_settings to display the settings menu
 
                 elif action == "exit":
                     running = False # Exit the while loop and terminate the game
 
     # draw current state
-    if main_menu:
+    if state == "menu":
         menu.draw_main_screen(screen)
-    else:
+    elif state == "menu_settings":
+        screen.fill((10, 15, 30)) # placeholder for now | here should be the draw of the settings menu
+    elif state == "level":
         level_1.update_level(dt, keys, events)
         level_1.draw_level(screen)
 
