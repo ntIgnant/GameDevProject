@@ -47,7 +47,6 @@ class Player:
         self.dash_cooldown_remaining = self.dash_cooldown
 
     def update(self, dt, keys, obstacles):
-    def update(self, dt, keys):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
 
