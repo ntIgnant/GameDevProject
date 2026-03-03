@@ -28,7 +28,7 @@ class Player:
         self.frames = []
         for x in range(0, sheet.get_width(), 32):
             frame = sheet.subsurface((x, 0, 32, 32))
-            frame = pygame.transform.scale(frame, (160, 160))#we can adjust the scale if needed
+            frame = pygame.transform.scale(frame, (64, 64))#we can adjust the scale if needed
             self.frames.append(frame)
 
         self.frame_index = 0
@@ -154,11 +154,17 @@ class Player:
         
 
 
-    def draw(self, screen):
+    def draw(self, screen, camera):
         frame = self.frames[self.frame_index]
 # flip when moving left
         if not self.facing_right:
             frame = pygame.transform.flip(frame, True, False)
 
-        screen.blit(frame, frame.get_rect(center=self.rect.center))
         self.draw_health_ui(screen)
+        # creating a new frame for the camera pov
+        player_camera_frame = frame.get_rect(center = self.rect.center)
+        player_camera_frame = camera.apply(player_camera_frame)
+
+        # zooming in and drawing the player
+        player_frame_zoom = pygame.transform.scale(frame, player_camera_frame.size)
+        screen.blit(player_frame_zoom, player_camera_frame.topleft)

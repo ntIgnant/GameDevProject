@@ -24,9 +24,13 @@ class Obstacles:
             if not overlap:
                 self.coordinates.append(new_rect)
 
-    def draw(self, screen):
+    def draw(self, screen, camera):
         for rect in self.coordinates:
-            screen.blit(self.image,rect)
+            
+            obstacle_camera_frame = camera.apply(rect)
+
+            # drawing the obstacle
+            pygame.draw.rect(screen, self.color, obstacle_camera_frame)
 
 
 

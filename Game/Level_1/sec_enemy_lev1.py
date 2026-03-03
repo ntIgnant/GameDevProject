@@ -1,13 +1,14 @@
 # Logic for the 'Secondary Enemy' of the Level 1
 import os
 import pygame
+from Game.camera import Camera
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 
 ENEMY_FRAME_W = 32
 ENEMY_FRAME_H = 32
-SCALE = 5
+SCALE = 2
 
 # HELPER FUNCTION FOR THE 'ANIMATION' FRAMES
 # It cuts the image into pieces and adds them into a list, so the list contains all the frames for the movement animation
@@ -62,9 +63,13 @@ class SecEnemyLev1:
                 if self.frame_index >= len(self.walk_frames):
                     self.frame_index = 0.0
 
-    def draw(self, screen):
+    def draw(self, screen, camera):
         if not self.walk_frames:
             return
         frame = self.walk_frames[int(self.frame_index)]
         rect = frame.get_rect(center=(int(self.pos.x), int(self.pos.y)))
-        screen.blit(frame, rect)
+        rect = camera.apply(rect)
+        
+        # zooming in and drawing the enemy
+        zoom = pygame.transform.scale(frame, rect.size)
+        screen.blit(zoom, rect.topleft)
