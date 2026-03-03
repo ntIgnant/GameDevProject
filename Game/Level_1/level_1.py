@@ -5,6 +5,7 @@ from Game.settings import WIDTH, HEIGHT
 from Game.player import Player
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
 from Game.obstacles import Obstacles
+from Game.timer import Timer
 from Game.camera import Camera
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -15,6 +16,7 @@ player = None
 obstacle = None
 enemies = []
 walk_frames = []
+timer = Timer(minutes = 2)
 camera = Camera()
 
 # Load Resources to initialize the level (background, ... structures should go here as well)
@@ -44,11 +46,12 @@ def handle_level_event(event):
         player.handle_event(event)
 
 # Function to update the 'state' of the match after every movement
-def update_level(dt, keys):
+def update_level(dt, keys, events):
     if not player:
         return
-
-    player.update(dt, keys)
+      
+    timer.update(events)
+    player.update(dt, keys, obstacle)
     camera.update(player)
 
     for e in enemies:
@@ -73,4 +76,6 @@ def draw_level(screen):
         e.draw(screen, camera)
 
 
+    timer.draw(screen)
+    pygame.display.flip()
     obstacle.draw(screen, camera)
