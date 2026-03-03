@@ -1,13 +1,20 @@
 # Orchestrator (game flow)
 import pygame
 
-import Game.settings as settings
-import Game.menu as menu
-import Game.Level_1.level_1 as level_1
+import Game.settings as settings # Config file of the game (e.g resolution, fps, etc)
+import Game.menu as menu # Menu logic
+import Game.menu_settings as menu_settings # settings menu logic
+import Game.Level_1.level_1 as level_1 # Level 1 logic
 
 pygame.init()
 
 screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+
+# Functions to force resolution scale, to avoid bugs of resolution
+menu.rebuild_layout()
+menu.load_menu_assets()
+menu_settings.rebuild_layout()
+
 pygame.display.set_caption("Game name")
 clock = pygame.time.Clock()
 
@@ -59,11 +66,30 @@ while running:
                 elif action == "exit":
                     running = False # Exit the while loop and terminate the game
 
+        # Case where the button 'settings' is pressed -> jump to settings pannel to let the user modify values
+        elif state == "menu_settings":
+            action = menu_settings.handle_event(event)
+            # Case of 'back' button inside settings menu
+            if action == "back":
+                state = "menu"
+            
+            # Case of 'switch resolution' in settings menu
+            elif action == "switch_resolution":
+                screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+
+                # In the change of resolution, it can get wierd because the assets have fixed resolutions and sizes
+                # If the 'switch resolution' settings is gonna be applied, we need to recreate the assets in the new size (HD and FHD for each used asset)
+                menu.rebuild_layout()
+                menu.load_menu_assets()
+                menu_settings.rebuild_layout()
+            
+
     # draw current state
     if state == "menu":
         menu.draw_main_screen(screen)
     elif state == "menu_settings":
-        screen.fill((10, 15, 30)) # placeholder for now | here should be the draw of the settings menu
+        # screen.fill((10, 15, 30)) # placeholder for now | here should be the draw of the settings menu
+        menu_settings.draw(screen)
     elif state == "level":
         level_1.update_level(dt, keys, events)
         level_1.draw_level(screen)
