@@ -50,6 +50,7 @@ def update_level(dt, keys, events):
 
     player.update(dt, keys)
     timer.update(events)
+    player.update(dt, keys, obstacle)
     for e in enemies:
         e.update(dt, player.rect.center)
 
