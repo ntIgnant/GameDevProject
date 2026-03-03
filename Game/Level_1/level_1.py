@@ -48,9 +48,8 @@ def update_level(dt, keys, events):
     if not player:
         return
 
-    player.update(dt, keys)
-    timer.update(events)
     player.update(dt, keys, obstacle)
+    timer.update(events)
     for e in enemies:
         e.update(dt, player.rect.center)
 
