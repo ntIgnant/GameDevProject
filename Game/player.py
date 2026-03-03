@@ -14,6 +14,11 @@ class Player:
         #health(we can connect it to damage later)
         self.max_health = 100
         self.health = 100
+        self.dash_distance = 140
+        self.dash_cooldown = 5.0
+        self.dash_cooldown_remaining = 0.0
+        self.dash_requested = False
+        self.last_move_dir = pygame.Vector2(1, 0)
 
         # loading walk animation (can be moved elsewhere)
         sheet = pygame.image.load(
@@ -49,9 +54,23 @@ class Player:
         self.bar_fill = ui.subsurface(FILL_RECT).copy()
 
     def handle_event(self, event):
-        pass
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
+            self.dash_requested = True
 
-    def update(self, dt, keys):
+    def _apply_dash(self, dash_dir):
+        if self.dash_cooldown_remaining > 0:
+            return
+
+        self.rect.x += int(dash_dir.x * self.dash_distance)
+        self.rect.y += int(dash_dir.y * self.dash_distance)
+        if dash_dir.x != 0:
+            self.facing_right = dash_dir.x > 0
+        self.dash_cooldown_remaining = self.dash_cooldown
+
+    def update(self, dt, keys, obstacles):
+        if self.dash_cooldown_remaining > 0:
+            self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
+
         dx = keys[pygame.K_d] - keys[pygame.K_a]
         dy = keys[pygame.K_s] - keys[pygame.K_w]
 
@@ -61,9 +80,25 @@ class Player:
             length = math.hypot(dx, dy)
             dx /= length
             dy /= length
+            self.last_move_dir.update(dx, dy)
 
+           #moving left and right logic
             self.rect.x += int(dx * self.speed * dt)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    if dx > 0:
+                        self.rect.right = obstacle.left #player moving right
+                    elif dx < 0:
+                        self.rect.left = obstacle.right #player moving left
+
+           #moving up and down logic
             self.rect.y += int(dy * self.speed * dt)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    if dy > 0:
+                        self.rect.bottom = obstacle.top #moving down
+                    if dy < 0:
+                        self.rect.top = obstacle.bottom #moving up
 
             if dx != 0:
                 self.facing_right = dx > 0
@@ -75,6 +110,16 @@ class Player:
         else:
             self.frame_index = 0
             self.timer = 0
+
+        if self.dash_requested:
+            if moving:
+                dash_dir = pygame.Vector2(dx, dy)
+            else:
+                dash_dir = self.last_move_dir.copy()
+                if dash_dir.length_squared() == 0:
+                    dash_dir = pygame.Vector2(1 if self.facing_right else -1, 0)
+            self._apply_dash(dash_dir)
+            self.dash_requested = False
 
         self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
         # TEMP test: health goes down automatically
