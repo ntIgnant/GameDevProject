@@ -1,6 +1,7 @@
 import os
 import pygame
-from .settings import WIDTH, HEIGHT
+import Game.settings as settings # Overall game settings (res, fps, ...)
+
 
 # MENU ASSETS DIRECTORY
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -24,7 +25,7 @@ def load_menu_assets():
 
     # Background Image
     background_img = pygame.image.load(BG_PATH).convert()
-    background_img = pygame.transform.smoothscale(background_img, (WIDTH, HEIGHT))
+    background_img = pygame.transform.smoothscale(background_img, (settings.WIDTH, settings.HEIGHT))
 
     # 'Start' button Image
     start_btn_img = pygame.image.load(START_BTN_PATH).convert_alpha()
@@ -42,24 +43,7 @@ def load_menu_assets():
     exit_btn_img = pygame.image.load(EXIT_BTN_PATH).convert_alpha()
     exit_btn_img = pygame.transform.smoothscale(exit_btn_img, (EXIT_RECT.width, EXIT_RECT.height))
 
-background_color = (252, 252, 255)
-
-# Definition of rectanles (buttons and titles)
-TITLE_RECT = pygame.Rect(0, 0, 500, 100)
-TITLE_RECT.center = (WIDTH // 2, HEIGHT // 4)
-
-START_RECT = pygame.Rect(0, 0, 200, 50)
-START_RECT.center = (WIDTH // 2, HEIGHT // 2 - 40)
-
-NEW_GAME_RECT = pygame.Rect(0, 0, 200, 50)
-NEW_GAME_RECT.center = (WIDTH // 2, HEIGHT // 2 + 20)
-
-SETTINGS_RECT = pygame.Rect(0, 0, 200, 50)
-SETTINGS_RECT.center = (WIDTH // 2, HEIGHT // 2 + 80)
-
-EXIT_RECT = pygame.Rect(0, 0, 200, 50)
-EXIT_RECT.center = (WIDTH // 2, HEIGHT // 2 + 140)
-
+background_color = (252, 252, 255) # Default background color (as fallbac in case background image does't load properly)
 
 def draw_main_screen(screen):
     if background_img is None:
@@ -109,3 +93,41 @@ def menu_options_handler(pos):
         return "exit"
 
     return None
+
+# Function for the 'switch resolution'. to re-scale the menu layout
+def rebuild_layout():
+    global TITLE_RECT, START_RECT, NEW_GAME_RECT, SETTINGS_RECT, EXIT_RECT
+    global background_img, start_btn_img, new_game_btn_img, settings_btn_img, exit_btn_img
+
+    # Scale to HD. Here the Height is not fowrced because there was a bug with it, but this is HD re-scale
+    scale = settings.WIDTH / 1280
+
+    # Re-scale Title rectangle
+    title_w = int(500 * scale)
+    title_h = int(100 * scale)
+    TITLE_RECT = pygame.Rect(0, 0, title_w, title_h)
+    TITLE_RECT.center = (settings.WIDTH // 2, int(settings.HEIGHT * 0.25))
+
+    # Buttons re-scale
+    btn_w = int(220 * scale)
+    btn_h = int(60 * scale)
+    START_RECT = pygame.Rect(0, 0, btn_w, btn_h)
+    NEW_GAME_RECT = pygame.Rect(0, 0, btn_w, btn_h)
+    SETTINGS_RECT = pygame.Rect(0, 0, btn_w, btn_h)
+    EXIT_RECT = pygame.Rect(0, 0, btn_w, btn_h)
+
+    gap = int(18 * scale)
+    cx = settings.WIDTH // 2
+    base_y = int(settings.HEIGHT * 0.48)
+
+    START_RECT.center = (cx, base_y)
+    NEW_GAME_RECT.center = (cx, base_y + (btn_h + gap))
+    SETTINGS_RECT.center = (cx, base_y + 2 * (btn_h + gap))
+    EXIT_RECT.center = (cx, base_y + 3 * (btn_h + gap))
+
+    # Force image reload to apply re-scaling and avoid wierd sizes
+    background_img = None
+    start_btn_img = None
+    new_game_btn_img = None
+    settings_btn_img = None
+    exit_btn_img = None
