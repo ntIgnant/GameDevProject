@@ -7,8 +7,8 @@ class Obstacles:
         self.size = 40
         self.color = (101,67,33)
         self.coordinates = []
-        self.image = pygame.image.load("Assets/Background/Obstacles/disc_obstacle.png")
-        self.image = pygame.transform.scale(self.image,(self.size, self.size))
+        self.image = pygame.image.load("Assets/Background/Obstacles/disc_obstacle.png").convert_alpha()
+        self.image_cropped = pygame.transform.scale(self.image,(80,80))
 
     def spawn(self, amount=6):
         while len(self.coordinates) < amount:
@@ -30,7 +30,8 @@ class Obstacles:
             obstacle_camera_frame = camera.apply(rect)
 
             # drawing the obstacle
-            pygame.draw.rect(screen, self.color, obstacle_camera_frame)
+            screen.blit(self.image_cropped, obstacle_camera_frame)
+
 
 
 
