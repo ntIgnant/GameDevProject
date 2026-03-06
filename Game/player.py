@@ -15,9 +15,16 @@ class Player:
         self.max_health = 100
         self.health = 100
         self.dash_distance = 140
+        self.dash_duration = 0.12
+        self.dash_speed = self.dash_distance / self.dash_duration
         self.dash_cooldown = 5.0
         self.dash_cooldown_remaining = 0.0
         self.dash_requested = False
+        self.dash_key_was_down = False
+        self.dashing = False
+        self.dash_time_remaining = 0.0
+        self.dash_direction = pygame.Vector2(0, 0)
+        self.dash_move_remainder = pygame.Vector2(0, 0)
         self.last_move_dir = pygame.Vector2(1, 0)
 
         # loading walk animation (can be moved elsewhere)
@@ -71,24 +78,75 @@ class Player:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
             self.dash_requested = True
 
-    def _apply_dash(self, dash_dir):
-        if self.dash_cooldown_remaining > 0:
+    def _start_dash(self, dash_dir):
+        if self.dash_cooldown_remaining > 0 or self.dashing:
             return
 
-        self.rect.x += int(dash_dir.x * self.dash_distance)
-        self.rect.y += int(dash_dir.y * self.dash_distance)
-        if dash_dir.x != 0:
-            self.facing_right = dash_dir.x > 0
+        if dash_dir.length_squared() == 0:
+            return
+
+        dash_dir = dash_dir.normalize()
+        self.dashing = True
+        self.dash_time_remaining = self.dash_duration
+        self.dash_direction.update(dash_dir.x, dash_dir.y)
+        self.dash_move_remainder.update(0, 0)
+        if self.dash_direction.x != 0:
+            self.facing_right = self.dash_direction.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
 
     def update(self, dt, keys, obstacles):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
 
+        dash_key_down = bool(keys[pygame.K_c])
+        if dash_key_down and not self.dash_key_was_down:
+            self.dash_requested = True
+        self.dash_key_was_down = dash_key_down
+
         dx = keys[pygame.K_d] - keys[pygame.K_a]
         dy = keys[pygame.K_s] - keys[pygame.K_w]
 
         moving = (dx != 0 or dy != 0)
+
+        if self.dash_requested:
+            if moving:
+                dash_dir = pygame.Vector2(dx, dy)
+            else:
+                dash_dir = self.last_move_dir.copy()
+                if dash_dir.length_squared() == 0:
+                    dash_dir = pygame.Vector2(1 if self.facing_right else -1, 0)
+            self._start_dash(dash_dir)
+            self.dash_requested = False
+
+        if self.dashing:
+            dash_step_time = min(dt, self.dash_time_remaining)
+            dash_delta = (self.dash_direction * self.dash_speed * dash_step_time) + self.dash_move_remainder
+
+            move_x = int(round(dash_delta.x))
+            move_y = int(round(dash_delta.y))
+
+            self.dash_move_remainder.update(dash_delta.x - move_x, dash_delta.y - move_y)
+
+            self.rect.x += move_x
+            self.rect.y += move_y
+
+            self.dash_time_remaining -= dash_step_time
+            if self.dash_time_remaining <= 0:
+                self.dashing = False
+                self.dash_time_remaining = 0
+                self.dash_move_remainder.update(0, 0)
+
+            self.timer += dt
+            if self.timer > 0.06:
+                self.timer = 0
+                self.frame_index = (self.frame_index + 1) % len(self.frames)
+
+            self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
+
+            if self.health > 0:
+                self.health -= 10 * dt
+            self.display_health += (self.health - self.display_health) * 5.0 * dt
+            return
 # normalising so diagonal movement isn't faster
         if moving:
             length = math.hypot(dx, dy)
@@ -124,16 +182,6 @@ class Player:
         else:
             self.frame_index = 0
             self.timer = 0
-
-        if self.dash_requested:
-            if moving:
-                dash_dir = pygame.Vector2(dx, dy)
-            else:
-                dash_dir = self.last_move_dir.copy()
-                if dash_dir.length_squared() == 0:
-                    dash_dir = pygame.Vector2(1 if self.facing_right else -1, 0)
-            self._apply_dash(dash_dir)
-            self.dash_requested = False
 
         self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
         # TEMP test: health goes down automatically
