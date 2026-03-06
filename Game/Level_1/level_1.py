@@ -1,12 +1,14 @@
 # Controller of Logic for Level 1
 import os
 import pygame
+import math
 from Game.settings import WIDTH, HEIGHT
 from Game.player import Player
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
 from Game.obstacles import Obstacles
 from Game.timer import Timer
 from Game.camera import Camera
+from Game.gun import GunProjectile
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -18,6 +20,7 @@ enemies = []
 walk_frames = []
 timer = Timer(minutes = 2)
 camera = Camera()
+bullets = []
 
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
@@ -32,12 +35,14 @@ def load_assets():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle
+    global player, enemies, obstacle, bullets
 
     player = Player()
     enemies = [SecEnemyLev1((100, 100), walk_frames),] # a single secondary enemy (for now)
     obstacle = Obstacles()
     obstacle.spawn()
+
+    bullets = []
 
 
 
@@ -47,8 +52,34 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
+    global bullets
+
     if not player:
         return
+
+    #check for shooting and shoot bullets
+    for event in events:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # mouse position in screen coordinates
+            mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
+
+            # convert to world coordinates accounting for camera zoom
+            mouse_world = mouse_screen / camera.zoom + camera.offset
+
+            # player position in world coordinates
+            player_pos = pygame.Vector2(player.rect.center)
+
+            # calculate direction from player to mouse
+            direction = mouse_world - player_pos
+            if direction.length() != 0:
+                direction = direction.normalize()
+
+            # spawn a bullet at player center
+            bullets.append(GunProjectile(*player.rect.center, direction))
+
+    #update the bullets
+    for b in bullets:
+        b.update(dt)
       
     timer.update(events)
     player.update(dt, keys, obstacle)
@@ -72,10 +103,12 @@ def draw_level(screen):
     if player:
         player.draw(screen, camera)
 
+    for b in bullets:
+        b.draw(screen, camera)
+
     for e in enemies:
         e.draw(screen, camera)
 
-
+    obstacle.draw(screen, camera)
     timer.draw(screen)
     pygame.display.flip()
-    obstacle.draw(screen, camera)
