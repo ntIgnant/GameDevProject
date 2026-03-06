@@ -14,6 +14,7 @@ class Player:
         #health(we can connect it to damage later)
         self.max_health = 100
         self.health = 100
+        # dash behaviour values
         self.dash_distance = 140
         self.dash_duration = 0.12
         self.dash_speed = self.dash_distance / self.dash_duration
@@ -41,6 +42,7 @@ class Player:
         self.frame_index = 0
         self.timer = 0
         self.facing_right = True
+        self.ui_font = pygame.font.Font(None, 16)
 
         ui = pygame.image.load(
             os.path.join(ASSETS_DIR, "Characters", "Player", "Health_Sheet.png")
@@ -85,6 +87,7 @@ class Player:
         if dash_dir.length_squared() == 0:
             return
 
+        # once dash starts movement does not end till end of dashs distance
         dash_dir = dash_dir.normalize()
         self.dashing = True
         self.dash_time_remaining = self.dash_duration
@@ -98,6 +101,7 @@ class Player:
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
 
+        # c triggers dash once only even in held down
         dash_key_down = bool(keys[pygame.K_c])
         if dash_key_down and not self.dash_key_was_down:
             self.dash_requested = True
@@ -108,6 +112,7 @@ class Player:
 
         moving = (dx != 0 or dy != 0)
 
+        # player dashes direction of movement, else dashes last direction they faced
         if self.dash_requested:
             if moving:
                 dash_dir = pygame.Vector2(dx, dy)
@@ -118,6 +123,7 @@ class Player:
             self._start_dash(dash_dir)
             self.dash_requested = False
 
+        # dash over a few frames for quick phase instead of a teleport
         if self.dashing:
             dash_step_time = min(dt, self.dash_time_remaining)
             dash_delta = (self.dash_direction * self.dash_speed * dash_step_time) + self.dash_move_remainder
@@ -190,6 +196,36 @@ class Player:
          
         self.display_health += (self.health - self.display_health) * 5.0 * dt
 
+    def draw_dash_ui(self, screen, x, y):
+        # dash cooldown bar
+        bar_width = 60
+        bar_height = 8
+        cooldown_ratio = 1.0
+        if self.dash_cooldown > 0:
+            cooldown_ratio = 1.0 - (self.dash_cooldown_remaining / self.dash_cooldown)
+        cooldown_ratio = max(0.0, min(1.0, cooldown_ratio))
+
+        frame_rect = pygame.Rect(x, y, bar_width, bar_height)
+        fill_width = int(bar_width * cooldown_ratio)
+        fill_rect = pygame.Rect(x, y, fill_width, bar_height)
+
+        pygame.draw.rect(screen, (18, 18, 24), frame_rect)
+        if fill_width > 0:
+            fill_color = (82, 201, 122) if self.dash_cooldown_remaining <= 0 else (70, 150, 230)
+            pygame.draw.rect(screen, fill_color, fill_rect)
+        pygame.draw.rect(screen, (0, 0, 0), frame_rect, 2)
+
+        label = self.ui_font.render("Dash", True, (255, 255, 255))
+        if self.dash_cooldown_remaining <= 0:
+            status_text = "READY"
+            status_color = (140, 255, 170)
+        else:
+            status_text = f"{self.dash_cooldown_remaining:.1f}s"
+            status_color = (210, 225, 255)
+        status = self.ui_font.render(status_text, True, status_color)
+
+        screen.blit(label, (x, y - 12))
+        screen.blit(status, (x + bar_width + 4, y - 3))
 
     def draw_health_ui(self, screen, camera):
        
@@ -283,6 +319,7 @@ class Player:
         # Draw a black outline around the health bar
         b_rect = final_bar_surf.get_rect(topleft=bar_draw_pos)
         pygame.draw.rect(screen, (0, 0, 0), b_rect, 2)
+        self.draw_dash_ui(screen, b_rect.left, b_rect.top - 18)
 
     def draw(self, screen, camera):
         frame = self.frames[self.frame_index]
