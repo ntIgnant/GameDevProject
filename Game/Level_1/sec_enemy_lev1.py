@@ -46,23 +46,54 @@ class SecEnemyLev1:
     def __init__(self, pos, walk_frames):
         self.pos = pygame.Vector2(pos)
         self.speed = 160
+        self.size = 30
+        self.rect = pygame.Rect(self.pos.x - self.size // 2, self.pos.y - self.size // 2, self.size, self.size)
 
         self.walk_frames = walk_frames
         self.frame_index = 0.0
         self.anim_fps = 10.0
 
-    def update(self, dt, target_center):
+    def update(self, dt, target_center, obstacles):
         to_target = pygame.Vector2(target_center) - self.pos
         dist = to_target.length()
 
         if dist > 2:
-            self.pos += to_target.normalize() * self.speed * dt
+            movement = to_target.normalize() * self.speed * dt
 
+            #move X
+            collision_x = False
+            self.pos.x += movement.x
+            self.rect.centerx = int(self.pos.x)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    collision_x = True
+                    if movement.x > 0:
+                        self.rect.right = obstacle.left
+                    elif movement.x < 0:
+                        self.rect.left = obstacle.right
+                    self.pos.x = self.rect.centerx
+
+            #move Y
+            collision_y = False
+            self.pos.y += movement.y
+            self.rect.centery = int(self.pos.y)
+            for obstacle in obstacles.coordinates:
+                if self.rect.colliderect(obstacle):
+                    collision_y = True
+                    if movement.y > 0:
+                        self.rect.bottom = obstacle.top
+                    elif movement.y < 0:
+                        self.rect.top = obstacle.bottom
+                    self.pos.y = self.rect.centery
+
+            if collision_x or collision_y:
+                movement = movement.rotate(45)
+
+            #animation
             if self.walk_frames:
                 self.frame_index += self.anim_fps * dt
                 if self.frame_index >= len(self.walk_frames):
                     self.frame_index = 0.0
-
     def draw(self, screen, camera):
         if not self.walk_frames:
             return

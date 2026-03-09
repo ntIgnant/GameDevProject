@@ -55,7 +55,7 @@ def update_level(dt, keys, events):
     camera.update(player)
 
     for e in enemies:
-        e.update(dt, player.rect.center)
+        e.update(dt, player.rect.center, obstacle)
 
 
 def draw_level(screen):
