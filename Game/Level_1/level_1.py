@@ -34,6 +34,7 @@ def load_assets():
     background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
     walk_frames = load_walk_frames()
+    #Load pause-menu art once so the level can show it instantly in game.
     pause_menu.load_assets()
 
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
@@ -61,6 +62,7 @@ def handle_level_event(event):
 def _start_resume_countdown():
     global is_paused, resume_countdown
 
+    #unpause immediately, but hold gameplay for 3 seconds in update_level().
     is_paused = False
     resume_countdown = 3.0
 
@@ -68,6 +70,7 @@ def _start_resume_countdown():
 def _handle_pause_input(events):
     global is_paused, resume_countdown
 
+    #ignore new pause input while the resume countdown is already running.
     if resume_countdown > 0:
         return None
 
@@ -81,12 +84,14 @@ def _handle_pause_input(events):
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if is_paused:
+                #asks pause_menu.py which pause button was clicked.
                 action = pause_menu.overlay_action(event.pos)
                 if action == "resume":
                     _start_resume_countdown()
                 elif action == "menu":
                     is_paused = False
                     resume_countdown = 0.0
+                    #main.py uses this return value to go back to the main menu.
                     return "menu"
                 return None
 
@@ -107,9 +112,11 @@ def update_level(dt, keys, events):
     if action == "menu":
         return action
 
+    #ffreeze gameplay updates while the pause overlay is open.
     if is_paused:
         return None
 
+    #the countdown is drawn on screen, but the actual gameplay stays frozen here.
     if resume_countdown > 0:
         resume_countdown = max(0.0, resume_countdown - dt)
         return None
@@ -171,6 +178,7 @@ def draw_level(screen):
     if timer:
         timer.draw(screen)
 
+    #only one pause ui state is shown at a time menu countdown or small button.
     if is_paused:
         pause_menu.draw_overlay(screen)
     elif resume_countdown > 0:
