@@ -5,6 +5,7 @@ import Game.settings as settings # Config file of the game (e.g resolution, fps,
 import Game.menu as menu # Menu logic
 import Game.menu_settings as menu_settings # settings menu logic
 import Game.Level_1.level_1 as level_1 # Level 1 logic
+import Game.pause_menu as pause_menu
 
 pygame.init()
 
@@ -14,6 +15,7 @@ screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
 menu.rebuild_layout()
 menu.load_menu_assets()
 menu_settings.rebuild_layout()
+pause_menu.load_assets()
 
 pygame.display.set_caption("Game name")
 clock = pygame.time.Clock()
@@ -82,7 +84,14 @@ while running:
                 menu.rebuild_layout()
                 menu.load_menu_assets()
                 menu_settings.rebuild_layout()
+                pause_menu.rebuild_layout()
             
+
+    level_action = None
+    if state == "level":
+        level_action = level_1.update_level(dt, keys, events)
+        if level_action == "menu":
+            state = "menu"
 
     # draw current state
     if state == "menu":
@@ -91,7 +100,6 @@ while running:
         # screen.fill((10, 15, 30)) # placeholder for now | here should be the draw of the settings menu
         menu_settings.draw(screen)
     elif state == "level":
-        level_1.update_level(dt, keys, events)
         level_1.draw_level(screen)
 
     pygame.display.update()
