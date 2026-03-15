@@ -61,8 +61,8 @@ def draw_main_screen(screen):
 
     # Title text and style
     font_size = int(TITLE_RECT.height * 0.6)
-    font_title = pygame.font.SysFont("Orbitron", font_size, bold=True)
-    title_text = font_title.render("Epic Name...", True, (255, 255, 255))
+    font_title = pygame.font.SysFont("Orbitron-Regular.ttf", font_size, bold=True)
+    title_text = font_title.render("Alien Outbreak", True, (255, 255, 255))
     screen.blit(title_text, title_text.get_rect(center=TITLE_RECT.center))
 
     screen.blit(start_btn_img, START_RECT.topleft)
