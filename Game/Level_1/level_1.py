@@ -24,7 +24,7 @@ def load_assets():
     """Call after pygame display is initialized."""
     global background, walk_frames
 
-    background = pygame.image.load(os.path.join(ASSETS_DIR, "Background", "demo1.png")).convert() # Background image
+    background = pygame.image.load(os.path.join(ASSETS_DIR, "Background", "demo2.png")).convert() # Background image
     background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
     walk_frames = load_walk_frames()
