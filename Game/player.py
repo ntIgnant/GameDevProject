@@ -73,7 +73,11 @@ class Player:
         self.health = 100
         self.max_health = 100
         self.display_health = 100 # This smoothly follows self.health
-        
+
+    def _clamp_to_area(self, area_rect):
+        if area_rect is None:
+            area_rect = pygame.Rect(0, 0, WIDTH, HEIGHT)
+        self.rect.clamp_ip(area_rect)
 
 
     def handle_event(self, event):
@@ -97,7 +101,7 @@ class Player:
             self.facing_right = self.dash_direction.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
 
-    def update(self, dt, keys, obstacles):
+    def update(self, dt, keys, obstacles, area_rect=None):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
 
@@ -147,7 +151,7 @@ class Player:
                 self.timer = 0
                 self.frame_index = (self.frame_index + 1) % len(self.frames)
 
-            self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
+            self._clamp_to_area(area_rect)
 
             if self.health > 0:
                 self.health -= 10 * dt
@@ -162,7 +166,7 @@ class Player:
 
            #moving left and right logic
             self.rect.x += int(dx * self.speed * dt)
-            for obstacle in obstacles.coordinates:
+            for obstacle in obstacles.collision_rects:
                 if self.rect.colliderect(obstacle):
                     if dx > 0:
                         self.rect.right = obstacle.left #player moving right
@@ -171,7 +175,7 @@ class Player:
 
            #moving up and down logic
             self.rect.y += int(dy * self.speed * dt)
-            for obstacle in obstacles.coordinates:
+            for obstacle in obstacles.collision_rects:
                 if self.rect.colliderect(obstacle):
                     if dy > 0:
                         self.rect.bottom = obstacle.top #moving down
@@ -189,7 +193,7 @@ class Player:
             self.frame_index = 0
             self.timer = 0
 
-        self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
+        self._clamp_to_area(area_rect)
         # TEMP test: health goes down automatically
         if self.health > 0:
             self.health -= 10 * dt  # Drains 10 HP every second
