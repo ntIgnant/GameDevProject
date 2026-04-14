@@ -18,6 +18,13 @@ class Timer():
         # returning the countdown string using the format MM:SS
         return f"{self.seconds // 60:02}:{self.seconds % 60:02}"
 
+    def add_seconds(self, seconds):
+        if seconds <= 0:
+            return
+
+        self.seconds += int(seconds)
+        self.text = self.font.render(self.time_format(), True, self.colour)
+
     def update(self, events):
         for event in events:
             if event.type == self.timer_event:

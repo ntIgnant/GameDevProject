@@ -6,6 +6,7 @@ from Game.player import Player
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
 from Game.obstacles import Obstacles
 from Game.timer import Timer
+from Game.time_pickup import TimePickup
 from Game.camera import Camera
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -59,6 +60,30 @@ timer = Timer(minutes = 2)
 camera = Camera()
 debug_font = None
 CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
+time_pickups = []
+scheduled_time_pickups = []
+TIME_PICKUP_BONUS_SECONDS = 15
+TIME_PICKUP_SPAWN_DELAYS = [20.0, 40.0]
+
+
+def build_time_pickups():
+    candidate_positions = [
+        LEVEL_AREA.center,
+        (LEVEL_AREA.left + 220, LEVEL_AREA.centery),
+        (LEVEL_AREA.right - 220, LEVEL_AREA.centery),
+        (LEVEL_AREA.centerx, LEVEL_AREA.top + 120),
+        (LEVEL_AREA.centerx, LEVEL_AREA.bottom - 120),
+    ]
+
+    pickups = []
+    for center in candidate_positions:
+        pickup = TimePickup(center, TIME_PICKUP_BONUS_SECONDS)
+        if not any(pickup.rect.colliderect(rect) for rect in obstacle.collision_rects):
+            pickups.append(pickup)
+        if len(pickups) == len(TIME_PICKUP_SPAWN_DELAYS):
+            break
+
+    return pickups
 
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
@@ -74,7 +99,7 @@ def load_assets():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle
+    global player, enemies, obstacle, time_pickups, scheduled_time_pickups
 
     player = Player()
     player.rect.clamp_ip(LEVEL_AREA)
@@ -83,6 +108,12 @@ def start_level():
     obstacle = Obstacles()
     obstacle.spawn(area_rect=LEVEL_AREA)
     obstacle.set_corner_blockers(build_corner_object_rects())
+    pickups = build_time_pickups()
+    time_pickups = []
+    scheduled_time_pickups = [
+        {"pickup": pickup, "spawn_in": spawn_delay}
+        for pickup, spawn_delay in zip(pickups, TIME_PICKUP_SPAWN_DELAYS)
+    ]
 
 
 
@@ -92,12 +123,33 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
+    global time_pickups, scheduled_time_pickups
+
     if not player:
         return
       
     timer.update(events)
     player.update(dt, keys, obstacle, LEVEL_AREA)
     camera.update(player)
+
+    ready_pickups = []
+    for scheduled_pickup in scheduled_time_pickups:
+        scheduled_pickup["spawn_in"] = max(0.0, scheduled_pickup["spawn_in"] - dt)
+        if scheduled_pickup["spawn_in"] <= 0:
+            ready_pickups.append(scheduled_pickup)
+
+    if ready_pickups:
+        time_pickups.extend(item["pickup"] for item in ready_pickups)
+        scheduled_time_pickups = [
+            item for item in scheduled_time_pickups if item not in ready_pickups
+        ]
+
+    active_pickups = []
+    for pickup in time_pickups:
+        pickup.update(dt)
+        if not pickup.try_collect(player.rect, timer):
+            active_pickups.append(pickup)
+    time_pickups = active_pickups
 
     for e in enemies:
         e.update(dt, player.rect.center, obstacle, LEVEL_AREA)
@@ -116,6 +168,9 @@ def draw_level(screen):
 
     if player:
         player.draw(screen, camera)
+
+    for pickup in time_pickups:
+        pickup.draw(screen, camera)
 
     for e in enemies:
         e.draw(screen, camera)
