@@ -3,6 +3,7 @@ import os
 import pygame
 from Game.settings import WIDTH, HEIGHT
 from Game.player import Player
+from Game.gun import GunProjectile
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
 from Game.obstacles import Obstacles
 from Game.timer import Timer
@@ -35,7 +36,19 @@ LEVEL_1_AREA_CONFIG = {
 
 LEVEL_AREA = pygame.Rect(*LEVEL_1_AREA_CONFIG["walkable_area"])
 
+DEV_MODE = False # This boolean is to view the restricted walkable-areas and coordinates of mouse in the game (for developement only) | False by default
+background = None
+player = None
+obstacle = None
+enemies = []
+bullets = []
+walk_frames = []
+timer = Timer(minutes = 2)
+camera = Camera()
+debug_font = None
+CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
 
+# Function to build the 'restricted areas' for the corner objects of the map (those corner boxes)
 def build_corner_object_rects():
     rects = []
     for offset_x, offset_y, width, height in LEVEL_1_AREA_CONFIG["corner_objects"]:
@@ -48,17 +61,6 @@ def build_corner_object_rects():
             )
         )
     return rects
-
-DEV_MODE = False # This boolean is to view the restricted walkable-areas and coordinates of mouse in the game (for developement only) | False by default
-background = None
-player = None
-obstacle = None
-enemies = []
-walk_frames = []
-timer = Timer(minutes = 2)
-camera = Camera()
-debug_font = None
-CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
 
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
@@ -74,12 +76,13 @@ def load_assets():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle
+    global player, enemies, obstacle, bullets
 
     player = Player()
     player.rect.clamp_ip(LEVEL_AREA)
     enemy_spawn = (LEVEL_AREA.left + 100, LEVEL_AREA.top + 100) # Hardcoded area where the secondary enemy spawns
     enemies = [SecEnemyLev1(enemy_spawn, walk_frames),] # a single secondary enemy (for now)
+    bullets = []
     obstacle = Obstacles()
     obstacle.spawn(area_rect=LEVEL_AREA)
     obstacle.set_corner_blockers(build_corner_object_rects())
@@ -92,16 +95,37 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
+    global bullets
+
     if not player:
         return
-      
+
+    for event in events:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
+            mouse_world = mouse_screen / camera.zoom + camera.offset
+            player_pos = pygame.Vector2(player.rect.center)
+            direction = mouse_world - player_pos
+
+            if direction.length_squared() > 0:
+                bullets.append(
+                    GunProjectile(*player.rect.center, direction.normalize())
+                )
+
+    active_bullets = []
+    for bullet in bullets:
+        bullet.update(dt)
+        if LEVEL_AREA.colliderect(bullet.rect):
+            active_bullets.append(bullet)
+    bullets = active_bullets
+
     timer.update(events)
     player.update(dt, keys, obstacle, LEVEL_AREA)
     camera.update(player)
 
     for e in enemies:
         e.update(dt, player.rect.center, obstacle, LEVEL_AREA)
-
+        
 
 def draw_level(screen):
     if background is None:
@@ -116,6 +140,9 @@ def draw_level(screen):
 
     if player:
         player.draw(screen, camera)
+
+    for bullet in bullets:
+        bullet.draw(screen, camera)
 
     for e in enemies:
         e.draw(screen, camera)
