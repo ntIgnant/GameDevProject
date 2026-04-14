@@ -94,11 +94,11 @@ def rebuild_layout():
     resume_rect = resume_img.get_rect(center=(window_rect.centerx - button_offset, button_y))
     menu_rect = menu_img.get_rect(center=(window_rect.centerx + button_offset, button_y))
 
-    #this is the small pause icon shown during gameplay in the top-right corner
+    #this is the small pause icon shown during gameplay in the top-left corner
     pause_size = max(44, int(54 * scale))
     pause_margin = max(16, int(22 * scale))
     pause_rect = pygame.Rect(
-        settings.WIDTH - pause_size - pause_margin,
+        pause_margin,
         pause_margin,
         pause_size,
         pause_size,
@@ -175,7 +175,7 @@ def draw_overlay(screen):
     screen.blit(subtitle, subtitle_rect)
 
     #draw both action buttons using the same helper so their style stays consistent
-    draw_action_button(screen, resume_img, resume_rect, "Resume", mouse_pos)
+    draw_action_button(screen, resume_img, resume_rect, "Resume", mouse_pos, primary=True)
     draw_action_button(screen, menu_img, menu_rect, "Menu", mouse_pos)
 
     hint = hint_font.render("Press Esc to resume with countdown", True, (203, 221, 242))
@@ -205,17 +205,19 @@ def draw_resume_countdown(screen, seconds_left):
     screen.blit(text, rect)
 
 
-def draw_action_button(screen, image, rect, label, mouse_pos):
+def draw_action_button(screen, image, rect, label, mouse_pos, primary=False):
     #If the mouse is over a button, draw a glow behind it
+    glow_color = (130, 232, 255, 75) if primary else (106, 219, 255, 55)
     if rect.collidepoint(mouse_pos):
         glow_rect = rect.inflate(18, 18)
         glow = make_layer(glow_rect.size, (0, 0, 0, 0))
-        pygame.draw.ellipse(glow, (106, 219, 255, 55), glow.get_rect())
+        pygame.draw.ellipse(glow, glow_color, glow.get_rect())
         screen.blit(glow, glow_rect.topleft)
 
     #draw the button image and its text label
     screen.blit(image, rect.topleft)
-    label_surface = title_font.render(label, True, (241, 246, 255))
+    label_color = (255, 255, 255) if primary else (241, 246, 255)
+    label_surface = title_font.render(label, True, label_color)
     label_rect = label_surface.get_rect(center=(rect.centerx, rect.bottom + 28))
     screen.blit(label_surface, label_rect)
 

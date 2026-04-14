@@ -1,4 +1,5 @@
 # Controller of Logic for Level 1
+import math
 import os
 import pygame
 from Game.settings import WIDTH, HEIGHT
@@ -8,6 +9,7 @@ from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
 from Game.obstacles import Obstacles
 from Game.timer import Timer
 from Game.camera import Camera
+import Game.pause_menu as pause_menu
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -47,6 +49,8 @@ timer = Timer(minutes = 2)
 camera = Camera()
 debug_font = None
 CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
+is_paused = False
+resume_countdown = 0.0
 
 # Function to build the 'restricted areas' for the corner objects of the map (those corner boxes)
 def build_corner_object_rects():
@@ -76,7 +80,7 @@ def load_assets():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle, bullets
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown
 
     player = Player()
     player.rect.clamp_ip(LEVEL_AREA)
@@ -86,6 +90,47 @@ def start_level():
     obstacle = Obstacles()
     obstacle.spawn(area_rect=LEVEL_AREA)
     obstacle.set_corner_blockers(build_corner_object_rects())
+    is_paused = False
+    resume_countdown = 0.0
+
+
+def start_resume_countdown():
+    global is_paused, resume_countdown
+
+    is_paused = False
+    resume_countdown = 3.0
+
+
+def handle_pause_input(events):
+    global is_paused, resume_countdown
+
+    if resume_countdown > 0:
+        return None
+
+    for event in events:
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if is_paused:
+                start_resume_countdown()
+            else:
+                is_paused = True
+            return None
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if is_paused:
+                action = pause_menu.overlay_action(event.pos)
+                if action == "resume":
+                    start_resume_countdown()
+                elif action == "menu":
+                    is_paused = False
+                    resume_countdown = 0.0
+                    return "menu"
+                return None
+
+            if pause_menu.pause_button_hit(event.pos):
+                is_paused = True
+                return None
+
+    return None
 
 
 
@@ -95,10 +140,21 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets
+    global bullets, resume_countdown
 
     if not player:
         return
+
+    pause_action = handle_pause_input(events)
+    if pause_action == "menu":
+        return "menu"
+
+    if is_paused:
+        return None
+
+    if resume_countdown > 0:
+        resume_countdown = max(0.0, resume_countdown - dt)
+        return None
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -153,6 +209,14 @@ def draw_level(screen):
     if DEV_MODE:
         draw_corner_blocker_overlay(screen)
         draw_debug_coordinates(screen)
+
+    if is_paused:
+        pause_menu.draw_overlay(screen)
+    elif resume_countdown > 0:
+        pause_menu.draw_resume_countdown(screen, max(1, math.ceil(resume_countdown)))
+    else:
+        pause_menu.draw_pause_button(screen)
+
     pygame.display.flip()
 
 # Tool used to visualize limited areas for player/enemies during developement
