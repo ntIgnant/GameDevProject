@@ -53,7 +53,13 @@ class SecEnemyLev1:
         self.frame_index = 0.0
         self.anim_fps = 10.0
 
-    def update(self, dt, target_center, obstacles):
+    def _clamp_to_area(self, area_rect):
+        if area_rect is None:
+            return
+        self.rect.clamp_ip(area_rect)
+        self.pos.update(self.rect.centerx, self.rect.centery)
+
+    def update(self, dt, target_center, obstacles, area_rect=None):
         to_target = pygame.Vector2(target_center) - self.pos
         dist = to_target.length()
 
@@ -64,7 +70,7 @@ class SecEnemyLev1:
             collision_x = False
             self.pos.x += movement.x
             self.rect.centerx = int(self.pos.x)
-            for obstacle in obstacles.coordinates:
+            for obstacle in obstacles.collision_rects:
                 if self.rect.colliderect(obstacle):
                     collision_x = True
                     if movement.x > 0:
@@ -73,11 +79,13 @@ class SecEnemyLev1:
                         self.rect.left = obstacle.right
                     self.pos.x = self.rect.centerx
 
+            self._clamp_to_area(area_rect)
+
             #move Y
             collision_y = False
             self.pos.y += movement.y
             self.rect.centery = int(self.pos.y)
-            for obstacle in obstacles.coordinates:
+            for obstacle in obstacles.collision_rects:
                 if self.rect.colliderect(obstacle):
                     collision_y = True
                     if movement.y > 0:
@@ -85,6 +93,8 @@ class SecEnemyLev1:
                     elif movement.y < 0:
                         self.rect.top = obstacle.bottom
                     self.pos.y = self.rect.centery
+
+            self._clamp_to_area(area_rect)
 
             if collision_x or collision_y:
                 movement = movement.rotate(45)
