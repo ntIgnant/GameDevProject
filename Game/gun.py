@@ -1,14 +1,18 @@
 import pygame
 
-class GunProjectiles:
-    def __innit__(self):
-        self.size = 20
-        self.rect = pygame.Rect(0, 0, self.size, self.size)
+class GunProjectile:
+    def __init__(self, x, y, direction):
+        self.size = 10
+        self.pos = pygame.Vector2(x, y)
+        self.rect = pygame.Rect(x, y, self.size, self.size)
+        self.direction = direction
         self.speed = 500
         self.color = (255, 0, 0)
 
-    def update(self):
-        pass
+    def update(self, dt):
+        self.pos += self.direction * self.speed * dt
+        self.rect.center = self.pos
 
-    def draw(self,screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+    def draw(self, screen, camera):
+        rect = camera.apply(self.rect)
+        pygame.draw.rect(screen, self.color, rect)
