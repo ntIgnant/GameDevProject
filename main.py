@@ -9,7 +9,7 @@ import Game.pause_menu as pause_menu
 
 pygame.init()
 
-screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+screen = pygame.display.set_mode(settings.CURRENT_SCREEN_SIZE)
 
 # Functions to force resolution scale, to avoid bugs of resolution
 menu.rebuild_layout()
@@ -77,7 +77,7 @@ while running:
             
             # Case of 'switch resolution' in settings menu
             elif action == "switch_resolution":
-                screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+                screen = pygame.display.set_mode(settings.CURRENT_SCREEN_SIZE)
 
                 # In the change of resolution, it can get wierd because the assets have fixed resolutions and sizes
                 # If the 'switch resolution' settings is gonna be applied, we need to recreate the assets in the new size (HD and FHD for each used asset)
@@ -85,6 +85,7 @@ while running:
                 menu.load_menu_assets()
                 menu_settings.rebuild_layout()
                 pause_menu.rebuild_layout()
+                level_1.rebuild_layout()
             
 
     level_action = None

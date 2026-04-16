@@ -1,5 +1,5 @@
 import pygame
-from .settings import WIDTH, HEIGHT
+import Game.settings as settings
 
 pygame.init()
 
@@ -31,6 +31,6 @@ class Timer():
                 self.text = self.font.render(self.time_format(), True, self.colour)        
             
     def draw(self, screen):
-        text_rect = self.text.get_rect(center = (WIDTH // 2, 50))  
+        text_rect = self.text.get_rect(center = (settings.WIDTH // 2, 50))
         screen.blit(self.text, text_rect)
 

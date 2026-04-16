@@ -1,14 +1,5 @@
 # Global configuration variables for the game
 
-# Resolution and FPSs
-WIDTH = 1280
-HEIGHT = 720
-FPS = 60
-
-# Game Progress (NEEDS TO BE CHANGED TO CONFIG FILE LATER e.g JSON FILE)
-TOTAL_LEVELS = 4
-# Global configuration variables for the game
-
 # Resolution
 RESOLUTIONS = {
     "HD": (1280, 720),
@@ -16,8 +7,15 @@ RESOLUTIONS = {
 }
 
 CURRENT_RESOLUTION = "HD" # Default Resolution
+CURRENT_SCREEN_SIZE = RESOLUTIONS[CURRENT_RESOLUTION]
+WIDTH, HEIGHT = CURRENT_SCREEN_SIZE # Resolution aplied in game
 
-WIDTH, HEIGHT = RESOLUTIONS[CURRENT_RESOLUTION] # Resolution aplied in game
+def set_resolution(name):
+    global CURRENT_RESOLUTION, CURRENT_SCREEN_SIZE, WIDTH, HEIGHT
+
+    CURRENT_RESOLUTION = name
+    CURRENT_SCREEN_SIZE = RESOLUTIONS[CURRENT_RESOLUTION]
+    WIDTH, HEIGHT = CURRENT_SCREEN_SIZE
 
 # FPS
 FPS_OPTIONS = {"30": 30, "60": 60, "120": 120}

@@ -2,7 +2,7 @@
 import math
 import os
 import pygame
-from Game.settings import WIDTH, HEIGHT
+import Game.settings as settings
 from Game.player import Player
 from Game.gun import GunProjectile
 from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
@@ -13,6 +13,7 @@ import Game.pause_menu as pause_menu
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
+BASE_LEVEL_SIZE = settings.RESOLUTIONS["HD"]
 
 # Allowed area where the player/enemies can move | NOTE: This will be different depending on the level (corner boxes differ between background imgs)
 LEVEL_1_AREA_CONFIG = {
@@ -36,7 +37,7 @@ LEVEL_1_AREA_CONFIG = {
     ]
 }
 
-LEVEL_AREA = pygame.Rect(*LEVEL_1_AREA_CONFIG["walkable_area"])
+LEVEL_AREA = pygame.Rect(0, 0, 0, 0)
 
 DEV_MODE = False # This boolean is to view the restricted walkable-areas and coordinates of mouse in the game (for developement only) | False by default
 background = None
@@ -53,15 +54,33 @@ is_paused = False
 resume_countdown = 0.0
 
 # Function to build the 'restricted areas' for the corner objects of the map (those corner boxes)
+def scale_level_rect(rect_values):
+    scale_x = settings.WIDTH / BASE_LEVEL_SIZE[0]
+    scale_y = settings.HEIGHT / BASE_LEVEL_SIZE[1]
+
+    x, y, width, height = rect_values
+    return pygame.Rect(
+        int(round(x * scale_x)),
+        int(round(y * scale_y)),
+        int(round(width * scale_x)),
+        int(round(height * scale_y)),
+    )
+
+def rebuild_level_area():
+    global LEVEL_AREA
+
+    LEVEL_AREA = scale_level_rect(LEVEL_1_AREA_CONFIG["walkable_area"])
+
 def build_corner_object_rects():
     rects = []
     for offset_x, offset_y, width, height in LEVEL_1_AREA_CONFIG["corner_objects"]:
+        scaled_rect = scale_level_rect((offset_x, offset_y, width, height))
         rects.append(
             pygame.Rect(
-                LEVEL_AREA.left + offset_x,
-                LEVEL_AREA.top + offset_y,
-                width,
-                height,
+                LEVEL_AREA.left + scaled_rect.x,
+                LEVEL_AREA.top + scaled_rect.y,
+                scaled_rect.width,
+                scaled_rect.height,
             )
         )
     return rects
@@ -72,19 +91,36 @@ def load_assets():
     global background, walk_frames, debug_font
 
     background = pygame.image.load(os.path.join(ASSETS_DIR, "Background", "demo2.png")).convert() # Background image
-    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+    background = pygame.transform.scale(background, settings.CURRENT_SCREEN_SIZE)
 
     walk_frames = load_walk_frames()
     debug_font = pygame.font.SysFont(None, 24)
+
+def rebuild_layout():
+    global background
+
+    rebuild_level_area()
+    camera.width = settings.WIDTH
+    camera.height = settings.HEIGHT
+    if background is not None:
+        load_assets()
+    if obstacle is not None:
+        obstacle.set_corner_blockers(build_corner_object_rects())
+    if player is not None:
+        player.rect.clamp_ip(LEVEL_AREA)
 
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
     global player, enemies, obstacle, bullets, is_paused, resume_countdown
 
+    rebuild_level_area()
     player = Player()
     player.rect.clamp_ip(LEVEL_AREA)
-    enemy_spawn = (LEVEL_AREA.left + 100, LEVEL_AREA.top + 100) # Hardcoded area where the secondary enemy spawns
+    enemy_spawn = (
+        LEVEL_AREA.left + int(round(100 * settings.WIDTH / BASE_LEVEL_SIZE[0])),
+        LEVEL_AREA.top + int(round(100 * settings.HEIGHT / BASE_LEVEL_SIZE[1])),
+    ) # Hardcoded area where the secondary enemy spawns
     enemies = [SecEnemyLev1(enemy_spawn, walk_frames),] # a single secondary enemy (for now)
     bullets = []
     obstacle = Obstacles()
@@ -216,8 +252,6 @@ def draw_level(screen):
         pause_menu.draw_resume_countdown(screen, max(1, math.ceil(resume_countdown)))
     else:
         pause_menu.draw_pause_button(screen)
-
-    pygame.display.flip()
 
 # Tool used to visualize limited areas for player/enemies during developement
 def draw_corner_blocker_overlay(screen):
