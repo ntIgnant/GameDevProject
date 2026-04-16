@@ -1,6 +1,6 @@
 import random
 import pygame
-from .settings import WIDTH, HEIGHT
+import Game.settings as settings
 
 class Obstacles:
     def __init__(self):
@@ -21,7 +21,7 @@ class Obstacles:
     def spawn(self, amount=6, area_rect=None):
         self.coordinates = []
         if area_rect is None:
-            area_rect = pygame.Rect(0, 0, WIDTH, HEIGHT)
+            area_rect = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
 
         while len(self.coordinates) < amount:
             max_x = area_rect.right - self.size

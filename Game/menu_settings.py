@@ -100,8 +100,8 @@ def handle_event(event):
         # Handler for the Change of resolution in settings
         if RES_LEFT_RECT.collidepoint(event.pos) or RES_RIGHT_RECT.collidepoint(event.pos):
             # Sswitch between availeable resolutions [HD, FHD] for now
-            settings.CURRENT_RESOLUTION = "FHD" if settings.CURRENT_RESOLUTION == "HD" else "HD"
-            settings.WIDTH, settings.HEIGHT = settings.RESOLUTIONS[settings.CURRENT_RESOLUTION]
+            new_resolution = "FHD" if settings.CURRENT_RESOLUTION == "HD" else "HD"
+            settings.set_resolution(new_resolution)
             rebuild_layout()
             return "switch_resolution" # state for 'switch resolution' (applied in main.py)
 

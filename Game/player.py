@@ -1,7 +1,7 @@
 import os
 import math
 import pygame
-from .settings import WIDTH, HEIGHT
+import Game.settings as settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -9,7 +9,7 @@ ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 class Player:
     def __init__(self):
         self.size = 40
-        self.rect = pygame.Rect(WIDTH // 2, HEIGHT // 2, self.size, self.size)
+        self.rect = pygame.Rect(settings.WIDTH // 2, settings.HEIGHT // 2, self.size, self.size)
         self.speed = 300
         #health(we can connect it to damage later)
         self.max_health = 100
@@ -76,7 +76,7 @@ class Player:
 
     def _clamp_to_area(self, area_rect):
         if area_rect is None:
-            area_rect = pygame.Rect(0, 0, WIDTH, HEIGHT)
+            area_rect = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
         self.rect.clamp_ip(area_rect)
 
 
