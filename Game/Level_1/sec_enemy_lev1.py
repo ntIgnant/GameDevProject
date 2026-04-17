@@ -59,14 +59,14 @@ class SecEnemyLev1:
         self.rect.clamp_ip(area_rect)
         self.pos.update(self.rect.centerx, self.rect.centery)
 
-    def update(self, dt, target_center, obstacles, area_rect=None):
+    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None):
         to_target = pygame.Vector2(target_center) - self.pos
         dist = to_target.length()
 
         if dist > 2:
             movement = to_target.normalize() * self.speed * dt
 
-            #move X
+            # Logic for X AXIS
             collision_x = False
             self.pos.x += movement.x
             self.rect.centerx = int(self.pos.x)
@@ -79,9 +79,19 @@ class SecEnemyLev1:
                         self.rect.left = obstacle.right
                     self.pos.x = self.rect.centerx
 
+            # This part of logic checks for collision with the player
+            # If the enemy collides with the player, the position should remain (for X axis)
+            if player_rect is not None and self.rect.colliderect(player_rect):
+                collision_x = True
+                if movement.x > 0:
+                    self.rect.right = player_rect.left
+                elif movement.x < 0:
+                    self.rect.left = player_rect.right
+                self.pos.x = self.rect.centerx
+
             self._clamp_to_area(area_rect)
 
-            #move Y
+            # Logic for Y AXIS
             collision_y = False
             self.pos.y += movement.y
             self.rect.centery = int(self.pos.y)
@@ -94,6 +104,17 @@ class SecEnemyLev1:
                         self.rect.top = obstacle.bottom
                     self.pos.y = self.rect.centery
 
+
+            # This part of logic checks for collision with the player
+            # If the enemy collides with the player, the position should remain (for Y axis)
+            if player_rect is not None and self.rect.colliderect(player_rect):
+                collision_y = True
+                if movement.y > 0:
+                    self.rect.bottom = player_rect.top
+                elif movement.y < 0:
+                    self.rect.top = player_rect.bottom
+                self.pos.y = self.rect.centery
+
             self._clamp_to_area(area_rect)
 
             if collision_x or collision_y:
@@ -104,6 +125,8 @@ class SecEnemyLev1:
                 self.frame_index += self.anim_fps * dt
                 if self.frame_index >= len(self.walk_frames):
                     self.frame_index = 0.0
+
+
     def draw(self, screen, camera):
         if not self.walk_frames:
             return
