@@ -265,7 +265,6 @@ def draw_level(screen):
         e.draw(screen, camera)
 
 
-    timer.draw(screen)
     obstacle.draw(screen, camera)
     if DEV_MODE:
         draw_corner_blocker_overlay(screen)
@@ -277,6 +276,8 @@ def draw_level(screen):
         pause_menu.draw_resume_countdown(screen, max(1, math.ceil(resume_countdown)))
     else:
         pause_menu.draw_pause_button(screen)
+        
+    timer.draw(screen)
 
 # Tool used to visualize limited areas for player/enemies during developement
 def draw_corner_blocker_overlay(screen):
