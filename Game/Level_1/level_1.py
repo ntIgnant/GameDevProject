@@ -212,11 +212,11 @@ def update_level(dt, keys, events):
     bullets = active_bullets
 
     timer.update(events)
-    player.update(dt, keys, obstacle, LEVEL_AREA)
+    player.update(dt, keys, obstacle, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
 
     for e in enemies:
-        e.update(dt, player.rect.center, obstacle, LEVEL_AREA)
+        e.update(dt, player.rect.center, obstacle, player.rect, LEVEL_AREA)
         
 
 def draw_level(screen):

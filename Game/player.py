@@ -79,6 +79,35 @@ class Player:
             area_rect = pygame.Rect(0, 0, settings.WIDTH, settings.HEIGHT)
         self.rect.clamp_ip(area_rect)
 
+    # This function creates a list of 'restricted areas', for the player not to pass though
+    # The list 'blockers' contains the obstacles of the map, and the enemy 'area'
+    def _blocking_rects(self, obstacles, enemy_rects=None):
+        blockers = list(obstacles.collision_rects)
+        if enemy_rects:
+            blockers.extend(enemy_rects)
+        return blockers
+
+    def _move_with_collisions(self, move_x, move_y, blockers, area_rect=None):
+        if move_x != 0:
+            self.rect.x += move_x
+            for blocker in blockers:
+                if self.rect.colliderect(blocker):
+                    if move_x > 0:
+                        self.rect.right = blocker.left
+                    elif move_x < 0:
+                        self.rect.left = blocker.right
+
+        if move_y != 0:
+            self.rect.y += move_y
+            for blocker in blockers:
+                if self.rect.colliderect(blocker):
+                    if move_y > 0:
+                        self.rect.bottom = blocker.top
+                    elif move_y < 0:
+                        self.rect.top = blocker.bottom
+
+        self._clamp_to_area(area_rect)
+
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
@@ -101,7 +130,8 @@ class Player:
             self.facing_right = self.dash_direction.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
 
-    def update(self, dt, keys, obstacles, area_rect=None):
+    # renemy_rects and area_rect are important for the 'restricted areas' that the player cannot access to
+    def update(self, dt, keys, obstacles, enemy_rects=None, area_rect=None):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
 
@@ -134,11 +164,11 @@ class Player:
 
             move_x = int(round(dash_delta.x))
             move_y = int(round(dash_delta.y))
+            blockers = self._blocking_rects(obstacles, enemy_rects)
 
             self.dash_move_remainder.update(dash_delta.x - move_x, dash_delta.y - move_y)
 
-            self.rect.x += move_x
-            self.rect.y += move_y
+            self._move_with_collisions(move_x, move_y, blockers, area_rect)
 
             self.dash_time_remaining -= dash_step_time
             if self.dash_time_remaining <= 0:
@@ -151,8 +181,6 @@ class Player:
                 self.timer = 0
                 self.frame_index = (self.frame_index + 1) % len(self.frames)
 
-            self._clamp_to_area(area_rect)
-
             if self.health > 0:
                 self.health -= 10 * dt
             self.display_health += (self.health - self.display_health) * 5.0 * dt
@@ -163,24 +191,13 @@ class Player:
             dx /= length
             dy /= length
             self.last_move_dir.update(dx, dy)
+            blockers = self._blocking_rects(obstacles, enemy_rects)
 
            #moving left and right logic
-            self.rect.x += int(dx * self.speed * dt)
-            for obstacle in obstacles.collision_rects:
-                if self.rect.colliderect(obstacle):
-                    if dx > 0:
-                        self.rect.right = obstacle.left #player moving right
-                    elif dx < 0:
-                        self.rect.left = obstacle.right #player moving left
+            self._move_with_collisions(int(dx * self.speed * dt), 0, blockers, area_rect)
 
            #moving up and down logic
-            self.rect.y += int(dy * self.speed * dt)
-            for obstacle in obstacles.collision_rects:
-                if self.rect.colliderect(obstacle):
-                    if dy > 0:
-                        self.rect.bottom = obstacle.top #moving down
-                    if dy < 0:
-                        self.rect.top = obstacle.bottom #moving up
+            self._move_with_collisions(0, int(dy * self.speed * dt), blockers, area_rect)
 
             if dx != 0:
                 self.facing_right = dx > 0
