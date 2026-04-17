@@ -6,6 +6,7 @@ import Game.menu as menu # Menu logic
 import Game.menu_settings as menu_settings # settings menu logic
 import Game.Level_1.level_1 as level_1 # Level 1 logic
 import Game.pause_menu as pause_menu
+import Game.game_over as game_over
 
 pygame.init()
 
@@ -16,6 +17,7 @@ menu.rebuild_layout()
 menu.load_menu_assets()
 menu_settings.rebuild_layout()
 pause_menu.load_assets()
+game_over.rebuild_layout()
 
 pygame.display.set_caption("Game name")
 clock = pygame.time.Clock()
@@ -85,7 +87,20 @@ while running:
                 menu.load_menu_assets()
                 menu_settings.rebuild_layout()
                 pause_menu.rebuild_layout()
+                game_over.rebuild_layout()
                 level_1.rebuild_layout()
+        
+        # Case where 'game_over' flag is returned
+        # This triggers the game over screen to the user
+        # TODO:  game over screen style needs to be improved Game/game_over.py
+        elif state == "game_over":
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                action = game_over.overlay_action(event.pos)
+                if action == "retry":
+                    level_1.start_level()
+                    state = "level"
+                elif action == "menu":
+                    state = "menu"
             
 
     level_action = None
@@ -93,6 +108,8 @@ while running:
         level_action = level_1.update_level(dt, keys, events)
         if level_action == "menu":
             state = "menu"
+        elif level_action == "game_over":
+            state = "game_over"
 
     # draw current state
     if state == "menu":
@@ -102,6 +119,8 @@ while running:
         menu_settings.draw(screen)
     elif state == "level":
         level_1.draw_level(screen)
+    elif state == "game_over":
+        game_over.draw_overlay(screen)
 
     pygame.display.update()
 

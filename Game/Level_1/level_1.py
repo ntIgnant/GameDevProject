@@ -53,6 +53,18 @@ CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the
 is_paused = False
 resume_countdown = 0.0
 
+# This is the 'damange rate' of the enemy to the player
+# Lower = Faster damage
+contact_damage_cooldown = 0.02
+contact_damage_timer = 0.0
+
+# This function checks for collision between the sec_enemy and the player, but for the comparision
+# it adds 'tolerance' to the enemy area to make sure player and enemy collide. This to make sure the damage is received
+# to the player.
+def rects_touch_or_overlap(rect_a, rect_b, tolerance=1):
+    expanded_a = rect_a.inflate(tolerance * 2, tolerance * 2)
+    return expanded_a.colliderect(rect_b)
+
 # Function to build the 'restricted areas' for the corner objects of the map (those corner boxes)
 def scale_level_rect(rect_values):
     scale_x = settings.WIDTH / BASE_LEVEL_SIZE[0]
@@ -112,7 +124,7 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer
 
     rebuild_level_area()
     player = Player()
@@ -128,6 +140,7 @@ def start_level():
     obstacle.set_corner_blockers(build_corner_object_rects())
     is_paused = False
     resume_countdown = 0.0
+    contact_damage_timer = 0.0
 
 
 def start_resume_countdown():
@@ -176,7 +189,7 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, resume_countdown
+    global bullets, resume_countdown, contact_damage_timer
 
     if not player:
         return
@@ -215,9 +228,21 @@ def update_level(dt, keys, events):
     player.update(dt, keys, obstacle, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
 
+    if contact_damage_timer > 0:
+        contact_damage_timer = max(0.0, contact_damage_timer - dt)
+
     for e in enemies:
         e.update(dt, player.rect.center, obstacle, player.rect, LEVEL_AREA)
-        
+    
+    enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
+    if enemy_touching_player and contact_damage_timer <= 0:
+        player.take_damage(1)
+        contact_damage_timer = contact_damage_cooldown
+
+    # When the player health reaches 0, "game_over" flag is returned
+    # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator
+    if player.health <= 0:
+        return "game_over"
 
 def draw_level(screen):
     if background is None:

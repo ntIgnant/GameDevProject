@@ -108,6 +108,11 @@ class Player:
 
         self._clamp_to_area(area_rect)
 
+    # This function is for the logic of damage to the player. It reduces the received amount of damage whenever it is called (called in level_1.py when the enemy tocuhes it)
+    # The rate at what the player received the damage can be modified in the parameters of level_1.py 'contact_damage_cooldown' and 'contact_damage_timer'
+    def take_damage(self, amount):
+        self.health = max(0, self.health - amount)
+
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
@@ -180,12 +185,10 @@ class Player:
             if self.timer > 0.06:
                 self.timer = 0
                 self.frame_index = (self.frame_index + 1) % len(self.frames)
-
-            if self.health > 0:
-                self.health -= 10 * dt
             self.display_health += (self.health - self.display_health) * 5.0 * dt
             return
-# normalising so diagonal movement isn't faster
+            
+        # normalising so diagonal movement isn't faster
         if moving:
             length = math.hypot(dx, dy)
             dx /= length
@@ -211,10 +214,6 @@ class Player:
             self.timer = 0
 
         self._clamp_to_area(area_rect)
-        # TEMP test: health goes down automatically
-        if self.health > 0:
-            self.health -= 10 * dt  # Drains 10 HP every second
-         
         self.display_health += (self.health - self.display_health) * 5.0 * dt
 
     def draw_dash_ui(self, screen, x, y):
