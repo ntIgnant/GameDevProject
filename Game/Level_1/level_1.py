@@ -217,11 +217,19 @@ def update_level(dt, keys, events):
                     GunProjectile(*player.rect.center, direction.normalize())
                 )
 
+    # Logic for bullet collision with sec-enemy (based on restricted areas)
+    # If the bullet overlaps a restricted area 'e.g enemy area/off map ', then they disapear
     active_bullets = []
     for bullet in bullets:
         bullet.update(dt)
-        if LEVEL_AREA.colliderect(bullet.rect):
-            active_bullets.append(bullet)
+        if not LEVEL_AREA.colliderect(bullet.rect):
+            continue
+
+        hit_enemy = any(bullet.rect.colliderect(enemy.rect) for enemy in enemies)
+        if hit_enemy:
+            continue
+
+        active_bullets.append(bullet)
     bullets = active_bullets
 
     timer.update(events)

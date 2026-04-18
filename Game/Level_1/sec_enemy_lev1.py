@@ -49,9 +49,38 @@ class SecEnemyLev1:
         self.size = 30
         self.rect = pygame.Rect(self.pos.x - self.size // 2, self.pos.y - self.size // 2, self.size, self.size)
 
+        # class attirbutes for the enemy health
+        self.max_health = 100
+        self.health = 100
+        self.display_health = 100.0
+
+        # Class attributes for the enemy position (to keep track)
         self.walk_frames = walk_frames
         self.frame_index = 0.0
         self.anim_fps = 10.0
+
+        # Directory to access the sec-enemy health-bar (same as the player but purple)
+        healthbar_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "Healthbar_sec_enemy.png")
+        ui = pygame.image.load(healthbar_path).convert_alpha()
+        ui_w, ui_h = ui.get_size()
+
+        # All the following of this function, is about the creation for the healthbar (copies the same structure as the player healthbar)
+        heart_rect = pygame.Rect(0, 132, 40, 34)
+        bg_rect = pygame.Rect(31, 60, 92, 13)
+        fill_rect = pygame.Rect(31, 100, 92, 13)
+
+        heart_rect.clamp_ip(pygame.Rect(0, 0, ui_w, ui_h))
+        bg_rect.clamp_ip(pygame.Rect(0, 0, ui_w, ui_h))
+        fill_rect.clamp_ip(pygame.Rect(0, 0, ui_w, ui_h))
+
+        self.heart_img = ui.subsurface(heart_rect).copy()
+        self.bar_bg = ui.subsurface(bg_rect).copy()
+        self.bar_fill = ui.subsurface(fill_rect).copy()
+
+        ui_scale = 0.3
+        self.heart_img = pygame.transform.scale_by(self.heart_img, ui_scale)
+        self.bar_bg = pygame.transform.scale_by(self.bar_bg, ui_scale)
+        self.bar_fill = pygame.transform.scale_by(self.bar_fill, ui_scale)
 
     def _clamp_to_area(self, area_rect):
         if area_rect is None:
@@ -126,10 +155,59 @@ class SecEnemyLev1:
                 if self.frame_index >= len(self.walk_frames):
                     self.frame_index = 0.0
 
+        self.display_health += (self.health - self.display_health) * 5.0 * dt
+
+
+    # This functions puts the healthbar of the sec-enemy above this one
+    # The following code is preatty much the same as the healthbar draw for the player
+    def draw_health_ui(self, screen, camera):
+        ratio = max(0, min(1, self.display_health / self.max_health))
+        internal_w = 40
+        internal_h = 6
+        bar_surf = pygame.Surface((internal_w, internal_h), pygame.SRCALPHA)
+        bar_surf.fill((0, 0, 0))
+
+        num_segments = 4
+        segment_gap = 1
+        seg_w = (internal_w - (segment_gap * (num_segments - 1))) // num_segments
+
+        for i in range(num_segments):
+            seg_x = i * (seg_w + segment_gap)
+            pygame.draw.rect(bar_surf, (70, 70, 70), (seg_x, 0, seg_w, internal_h))
+
+            seg_start = i / num_segments
+            if ratio > seg_start:
+                seg_ratio = min(1, (ratio - seg_start) * num_segments)
+                current_seg_w = int(seg_w * seg_ratio)
+                if current_seg_w > 0:
+                    pygame.draw.rect(bar_surf, (178, 73, 255), (seg_x, 0, current_seg_w, internal_h))
+                    pygame.draw.rect(bar_surf, (220, 164, 255), (seg_x, 0, current_seg_w, 1))
+                    pygame.draw.rect(bar_surf, (95, 34, 145), (seg_x, internal_h - 1, current_seg_w, 1))
+
+        # Change this values to change the healthbar dimensions
+        bar_world_rect = pygame.Rect(
+            self.rect.centerx - 40,
+            self.rect.top - 16,
+            40,
+            6,
+        )
+        bar_cam_rect = camera.apply(bar_world_rect)
+        final_bar_surf = pygame.transform.scale(bar_surf, (internal_w * 2, internal_h * 2))
+        bar_draw_pos = (
+            bar_cam_rect.centerx - final_bar_surf.get_width() // 2,
+            bar_cam_rect.y,
+        )
+        screen.blit(final_bar_surf, bar_draw_pos)
+
+        bar_rect = final_bar_surf.get_rect(topleft=bar_draw_pos)
+        pygame.draw.rect(screen, (0, 0, 0), bar_rect, 2)
+
 
     def draw(self, screen, camera):
         if not self.walk_frames:
             return
+
+        self.draw_health_ui(screen, camera)
         frame = self.walk_frames[int(self.frame_index)]
         rect = frame.get_rect(center=(int(self.pos.x), int(self.pos.y)))
         rect = camera.apply(rect)
