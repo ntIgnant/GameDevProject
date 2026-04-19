@@ -9,11 +9,17 @@ class Camera():
         self.offset = pygame.math.Vector2()
         self.width = settings.WIDTH
         self.height = settings.HEIGHT
-        self.zoom = 2.2
+        self.base_zoom = 2.2
+        self.zoom = self.base_zoom
+
+    def _resolution_scale(self):
+        base_width, base_height = settings.RESOLUTIONS["HD"]
+        return min(self.width / base_width, self.height / base_height)
 
     def update(self, player):
         self.width = settings.WIDTH
         self.height = settings.HEIGHT
+        self.zoom = self.base_zoom * self._resolution_scale()
 
         # zooming in means that the part of the part of world that is visible becomes smaller
         camera_width = self.width // self.zoom

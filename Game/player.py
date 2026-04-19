@@ -7,9 +7,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 
 class Player:
-    def __init__(self):
+    def __init__(self, spawn_pos=None):
         self.size = 40
-        self.rect = pygame.Rect(settings.WIDTH // 2, settings.HEIGHT // 2, self.size, self.size)
+        spawn_x = settings.WIDTH // 2
+        spawn_y = settings.HEIGHT // 2
+        if spawn_pos is not None:
+            spawn_x, spawn_y = spawn_pos
+        self.rect = pygame.Rect(0, 0, self.size, self.size)
+        self.rect.center = (spawn_x, spawn_y)
         self.speed = 300
         #health(we can connect it to damage later)
         self.max_health = 100
