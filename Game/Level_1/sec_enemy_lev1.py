@@ -82,6 +82,17 @@ class SecEnemyLev1:
         self.bar_bg = pygame.transform.scale_by(self.bar_bg, ui_scale)
         self.bar_fill = pygame.transform.scale_by(self.bar_fill, ui_scale)
 
+    # This function updates the current health of the sec-enemy (fur bullet damage)
+    # the 'amount' parameter is a 'damage' value that can be modified in level_1.py (damage of the bullet)
+
+    def take_damage(self, amount):
+        self.health = max(0, self.health - amount)
+
+    # This function just checks if the health of the enemy is > 0
+    # This is ued in level_1.py to evaluate if enemy should still appear or not in the map
+    def is_alive(self):
+        return self.health > 0
+
     def _clamp_to_area(self, area_rect):
         if area_rect is None:
             return

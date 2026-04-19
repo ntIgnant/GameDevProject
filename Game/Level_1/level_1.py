@@ -14,6 +14,7 @@ import Game.pause_menu as pause_menu
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 BASE_LEVEL_SIZE = settings.RESOLUTIONS["HD"]
+BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo2.png")
 
 # Allowed area where the player/enemies can move | NOTE: This will be different depending on the level (corner boxes differ between background imgs)
 LEVEL_1_AREA_CONFIG = {
@@ -58,6 +59,10 @@ resume_countdown = 0.0
 contact_damage_cooldown = 0.02
 contact_damage_timer = 0.0
 
+# 'damage rate' of one player's bullet. Used to damange enemy
+# Higher number -> more damange
+bullet_damage = 10
+
 # This function checks for collision between the sec_enemy and the player, but for the comparision
 # it adds 'tolerance' to the enemy area to make sure player and enemy collide. This to make sure the damage is received
 # to the player.
@@ -67,16 +72,8 @@ def rects_touch_or_overlap(rect_a, rect_b, tolerance=1):
 
 # Function to build the 'restricted areas' for the corner objects of the map (those corner boxes)
 def scale_level_rect(rect_values):
-    scale_x = settings.WIDTH / BASE_LEVEL_SIZE[0]
-    scale_y = settings.HEIGHT / BASE_LEVEL_SIZE[1]
-
     x, y, width, height = rect_values
-    return pygame.Rect(
-        int(round(x * scale_x)),
-        int(round(y * scale_y)),
-        int(round(width * scale_x)),
-        int(round(height * scale_y)),
-    )
+    return pygame.Rect(x, y, width, height)
 
 def rebuild_level_area():
     global LEVEL_AREA
@@ -102,8 +99,8 @@ def load_assets():
     """Call after pygame display is initialized."""
     global background, walk_frames, debug_font
 
-    background = pygame.image.load(os.path.join(ASSETS_DIR, "Background", "demo2.png")).convert() # Background image
-    background = pygame.transform.scale(background, settings.CURRENT_SCREEN_SIZE)
+    raw_background = pygame.image.load(BACKGROUND_PATH).convert()
+    background = pygame.transform.smoothscale(raw_background, BASE_LEVEL_SIZE)
 
     walk_frames = load_walk_frames()
     debug_font = pygame.font.SysFont(None, 24)
@@ -114,8 +111,13 @@ def rebuild_layout():
     rebuild_level_area()
     camera.width = settings.WIDTH
     camera.height = settings.HEIGHT
+    camera.zoom = camera.base_zoom * min(
+        settings.WIDTH / BASE_LEVEL_SIZE[0],
+        settings.HEIGHT / BASE_LEVEL_SIZE[1],
+    )
     if background is not None:
-        load_assets()
+        raw_background = pygame.image.load(BACKGROUND_PATH).convert()
+        background = pygame.transform.smoothscale(raw_background, BASE_LEVEL_SIZE)
     if obstacle is not None:
         obstacle.set_corner_blockers(build_corner_object_rects())
     if player is not None:
@@ -127,11 +129,10 @@ def start_level():
     global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer
 
     rebuild_level_area()
-    player = Player()
-    player.rect.clamp_ip(LEVEL_AREA)
+    player = Player(LEVEL_AREA.center)
     enemy_spawn = (
-        LEVEL_AREA.left + int(round(100 * settings.WIDTH / BASE_LEVEL_SIZE[0])),
-        LEVEL_AREA.top + int(round(100 * settings.HEIGHT / BASE_LEVEL_SIZE[1])),
+        LEVEL_AREA.left + 100,
+        LEVEL_AREA.top + 100,
     ) # Hardcoded area where the secondary enemy spawns
     enemies = [SecEnemyLev1(enemy_spawn, walk_frames),] # a single secondary enemy (for now)
     bullets = []
@@ -189,7 +190,7 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, resume_countdown, contact_damage_timer
+    global bullets, enemies, resume_countdown, contact_damage_timer
 
     if not player:
         return
@@ -225,7 +226,14 @@ def update_level(dt, keys, events):
         if not LEVEL_AREA.colliderect(bullet.rect):
             continue
 
-        hit_enemy = any(bullet.rect.colliderect(enemy.rect) for enemy in enemies)
+        # Check for collision between bullet and enemy, if there is collision, sec-enemy takes damange (value defined at bullet_damange)
+        hit_enemy = False
+        for enemy in enemies:
+            if bullet.rect.colliderect(enemy.rect):
+                enemy.take_damage(bullet_damage) # Update enemy health (take damange)
+                hit_enemy = True
+                break
+
         if hit_enemy:
             continue
 
@@ -241,6 +249,9 @@ def update_level(dt, keys, events):
 
     for e in enemies:
         e.update(dt, player.rect.center, obstacle, player.rect, LEVEL_AREA)
+
+    # If enemy health <= 0, enemy is dead and will disapear (restricted areas will be ignored)
+    enemies = [enemy for enemy in enemies if enemy.is_alive()]
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
     if enemy_touching_player and contact_damage_timer <= 0:
