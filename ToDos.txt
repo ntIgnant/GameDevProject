@@ -16,4 +16,6 @@
 - F1.3, F1.5, F1.6 current room, equipped weapon/skill, collected items: missing.
 
 - multiple sec-enemies (clones of the green one)
-- 
+- 'boost items' creation and logic
+- Another skill for the player (like the dash)
+
