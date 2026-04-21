@@ -59,6 +59,8 @@ class SecEnemyLev1:
         self.frame_index = 0.0
         self.anim_fps = 10.0
 
+        self.facing_right = True # default asset 'is facing' direction
+
         # Directory to access the sec-enemy health-bar (same as the player but purple)
         healthbar_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "Healthbar_sec_enemy.png")
         ui = pygame.image.load(healthbar_path).convert_alpha()
@@ -99,12 +101,22 @@ class SecEnemyLev1:
         self.rect.clamp_ip(area_rect)
         self.pos.update(self.rect.centerx, self.rect.centery)
 
-    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None):
+    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None, enemy_rects=None):
         to_target = pygame.Vector2(target_center) - self.pos
         dist = to_target.length()
 
         if dist > 2:
             movement = to_target.normalize() * self.speed * dt
+
+            # The asset of the enemy should face the same as the direction it is walking to
+
+            # set the asset to be facing at the right
+            if movement.x < 0.01:
+                self.facing_right = True
+
+            # set the asset to be facing at the left
+            elif movement.x > -0.01:
+                self.facing_right = False
 
             # Logic for X AXIS
             collision_x = False
@@ -128,6 +140,18 @@ class SecEnemyLev1:
                 elif movement.x < 0:
                     self.rect.left = player_rect.right
                 self.pos.x = self.rect.centerx
+
+            # Check for overlap area between sec-enemies
+            # Each sec-enemy has it's onw area, which is restricted for the other enemies and player
+            if enemy_rects:
+                for enemy_rect in enemy_rects:
+                    if self.rect.colliderect(enemy_rect):
+                        collision_x = True
+                        if movement.x > 0:
+                            self.rect.right = enemy_rect.left
+                        elif movement.x < 0:
+                            self.rect.left = enemy_rect.right
+                        self.pos.x = self.rect.centerx
 
             self._clamp_to_area(area_rect)
 
@@ -154,6 +178,19 @@ class SecEnemyLev1:
                 elif movement.y < 0:
                     self.rect.top = player_rect.bottom
                 self.pos.y = self.rect.centery
+
+
+            # Check for overlap area between sec-enemies
+            # Each sec-enemy has it's onw area, which is restricted for the other enemies and player
+            if enemy_rects:
+                for enemy_rect in enemy_rects:
+                    if self.rect.colliderect(enemy_rect):
+                        collision_y = True
+                        if movement.y > 0:
+                            self.rect.bottom = enemy_rect.top
+                        elif movement.y < 0:
+                            self.rect.top = enemy_rect.bottom
+                        self.pos.y = self.rect.centery
 
             self._clamp_to_area(area_rect)
 
@@ -220,6 +257,8 @@ class SecEnemyLev1:
 
         self.draw_health_ui(screen, camera)
         frame = self.walk_frames[int(self.frame_index)]
+        if not self.facing_right:
+            frame = pygame.transform.flip(frame, True, False)
         rect = frame.get_rect(center=(int(self.pos.x), int(self.pos.y)))
         rect = camera.apply(rect)
         
