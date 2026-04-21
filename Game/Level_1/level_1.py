@@ -144,6 +144,7 @@ def start_level():
     contact_damage_timer = 0.0
     timer.minutes = 2
     timer.seconds = 120
+    timer.text = timer.font.render(timer.time_format(), True, timer.colour)
 
 
 def start_resume_countdown():
