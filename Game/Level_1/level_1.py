@@ -126,7 +126,7 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
@@ -142,6 +142,8 @@ def start_level():
     is_paused = False
     resume_countdown = 0.0
     contact_damage_timer = 0.0
+    timer.minutes = 2
+    timer.seconds = 120
 
 
 def start_resume_countdown():
@@ -183,14 +185,13 @@ def handle_pause_input(events):
     return None
 
 
-
 def handle_level_event(event):
     if player:
         player.handle_event(event)
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, enemies, resume_countdown, contact_damage_timer
+    global bullets, enemies, resume_countdown, contact_damage_timer, timer
 
     if not player:
         return
