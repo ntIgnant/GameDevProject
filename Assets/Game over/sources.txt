@@ -1,0 +1,5 @@
+--- Sources where the assets were taken from ---
+
+https://free-game-assets.itch.io/free-space-shooter-game-user-interface
+
++ some assets were edited in order to fit our game
