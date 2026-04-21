@@ -1,6 +1,7 @@
 # Controller of Logic for Level 1
 import math
 import os
+import random
 import pygame
 import Game.settings as settings
 from Game.player import Player
@@ -63,6 +64,9 @@ contact_damage_timer = 0.0
 # Higher number -> more damange
 bullet_damage = 10
 
+# Variable that defines how many seconadry enemies are going to spawn (4 as default, maybe 6 to make it harder?)
+SEC_ENEMY_COUNT = 4
+
 # This function checks for collision between the sec_enemy and the player, but for the comparision
 # it adds 'tolerance' to the enemy area to make sure player and enemy collide. This to make sure the damage is received
 # to the player.
@@ -93,6 +97,62 @@ def build_corner_object_rects():
             )
         )
     return rects
+
+# This function generates the seconary enemies in random possitions (avoiding restricted areas)
+def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, player_rect=None):
+    spawned_enemies = []
+    enemy_size = 30
+    padding = 12 # This value adds a 'gap/padding' between the random place where the enemies are generated, for them not to be too close
+    max_attempts = max(40, count * 50)
+    blockers = list(obstacles.collision_rects) # list of restricted areas (enemies cannot spawn here)
+    if player_rect is not None:
+        blockers.append(player_rect.inflate(160, 160))
+
+    # Coordinates for the allowed areas where the enemies can spawn
+    min_x = area_rect.left + enemy_size // 2
+    max_x = area_rect.right - enemy_size // 2
+    min_y = area_rect.top + enemy_size // 2
+    max_y = area_rect.bottom - enemy_size // 2
+
+    for _ in range(max_attempts):
+        if len(spawned_enemies) >= count:
+            break
+        
+        # generate two random coordinates to place the enemy (from the ranges of before)
+        spawn_pos = (
+            random.randint(min_x, max_x),
+            random.randint(min_y, max_y),
+        )
+        candidate_rect = pygame.Rect(0, 0, enemy_size, enemy_size)
+        candidate_rect.center = spawn_pos
+        candidate_rect.inflate_ip(padding * 2, padding * 2)
+
+        if any(candidate_rect.colliderect(blocker) for blocker in blockers):
+            continue
+
+        if any(candidate_rect.colliderect(enemy.rect.inflate(padding * 2, padding * 2)) for enemy in spawned_enemies):
+            continue
+
+        spawned_enemies.append(SecEnemyLev1(spawn_pos, walk_frames))
+
+    return spawned_enemies
+
+# This function basically generates 'different' chasing points instead of just one unique point for the enemies to chase
+# Before, the enemies were chasing a unique point (center of the player) and they were too predictable
+# The function sets a chasing point for an individial enemy, based on the center of the player but applying some math to make it more 'offset'
+# The radius and collapse_distance args can be changed to have different chasing points results
+def get_enemy_target_point(player_center, enemy_pos, enemy_index, enemy_count, radius=70, collapse_distance=95):
+    if enemy_count <= 0:
+        return player_center
+
+    if pygame.Vector2(player_center).distance_to(enemy_pos) <= collapse_distance:
+        return player_center
+
+    angle = (2 * math.pi * enemy_index) / enemy_count
+    return (
+        player_center[0] + math.cos(angle) * radius,
+        player_center[1] + math.sin(angle) * radius,
+    )
 
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
@@ -130,15 +190,17 @@ def start_level():
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
-    enemy_spawn = (
-        LEVEL_AREA.left + 100,
-        LEVEL_AREA.top + 100,
-    ) # Hardcoded area where the secondary enemy spawns
-    enemies = [SecEnemyLev1(enemy_spawn, walk_frames),] # a single secondary enemy (for now)
     bullets = []
     obstacle = Obstacles()
     obstacle.spawn(area_rect=LEVEL_AREA)
     obstacle.set_corner_blockers(build_corner_object_rects())
+    enemies = spawn_secondary_enemies(
+        SEC_ENEMY_COUNT,
+        LEVEL_AREA,
+        obstacle,
+        walk_frames,
+        player.rect,
+    )
     is_paused = False
     resume_countdown = 0.0
     contact_damage_timer = 0.0
@@ -249,8 +311,13 @@ def update_level(dt, keys, events):
     if contact_damage_timer > 0:
         contact_damage_timer = max(0.0, contact_damage_timer - dt)
 
-    for e in enemies:
-        e.update(dt, player.rect.center, obstacle, player.rect, LEVEL_AREA)
+    # this gives each of the seconadry enemies an index to have its own 'identity'
+    # for area overlapping avoidance logic and other stuff, so it treats each sec-enemy
+    # instance as a different 'indexed' object
+    for index, e in enumerate(enemies):
+        other_enemy_rects = [enemy.rect for enemy in enemies if enemy is not e]
+        target_point = get_enemy_target_point(player.rect.center, e.pos, index, len(enemies))
+        e.update(dt, target_point, obstacle, player.rect, LEVEL_AREA, other_enemy_rects)
 
     # If enemy health <= 0, enemy is dead and will disapear (restricted areas will be ignored)
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
