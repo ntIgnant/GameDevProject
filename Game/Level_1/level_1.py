@@ -10,6 +10,7 @@ from Game.obstacles import Obstacles
 from Game.timer import Timer
 from Game.camera import Camera
 import Game.pause_menu as pause_menu
+from Game.upgrades import Upgrades
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -44,6 +45,7 @@ DEV_MODE = False # This boolean is to view the restricted walkable-areas and coo
 background = None
 player = None
 obstacle = None
+upgrades_spawn = []
 enemies = []
 bullets = []
 walk_frames = []
@@ -134,7 +136,7 @@ def start_level():
         LEVEL_AREA.left + 100,
         LEVEL_AREA.top + 100,
     ) # Hardcoded area where the secondary enemy spawns
-    enemies = [SecEnemyLev1(enemy_spawn, walk_frames),] # a single secondary enemy (for now)
+    enemies = [SecEnemyLev1(enemy_spawn, walk_frames), SecEnemyLev1(enemy_spawn, walk_frames), SecEnemyLev1(enemy_spawn, walk_frames),] # a single secondary enemy (for now)
     bullets = []
     obstacle = Obstacles()
     obstacle.spawn(area_rect=LEVEL_AREA)
@@ -190,7 +192,7 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, enemies, resume_countdown, contact_damage_timer
+    global bullets, enemies, resume_countdown, contact_damage_timer, upgrades_spawn
 
     if not player:
         return
@@ -241,7 +243,7 @@ def update_level(dt, keys, events):
     bullets = active_bullets
 
     timer.update(events)
-    player.update(dt, keys, obstacle, [enemy.rect for enemy in enemies], LEVEL_AREA)
+    player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
 
     if contact_damage_timer > 0:
@@ -250,8 +252,14 @@ def update_level(dt, keys, events):
     for e in enemies:
         e.update(dt, player.rect.center, obstacle, player.rect, LEVEL_AREA)
 
+    #Spawn upgrades on dead enemy poss, takes the dead enemy then takes its position 
+    dead_enemies = [enemy for enemy in enemies if not enemy.is_alive()]
+    for enemy in dead_enemies:
+        upgrades_spawn.append(Upgrades(enemy.pos.x, enemy.pos.y))
+
     # If enemy health <= 0, enemy is dead and will disapear (restricted areas will be ignored)
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
+
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
     if enemy_touching_player and contact_damage_timer <= 0:
@@ -282,6 +290,9 @@ def draw_level(screen):
 
     for e in enemies:
         e.draw(screen, camera)
+    
+    for u in upgrades_spawn:
+        u.draw(screen, camera)
 
 
     obstacle.draw(screen, camera)

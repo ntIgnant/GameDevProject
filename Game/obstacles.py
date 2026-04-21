@@ -44,12 +44,11 @@ class Obstacles:
 
     def draw(self, screen, camera):
         for rect in self.coordinates:
-            
-            obstacle_camera_frame = camera.apply(rect)
+            screen_rect = camera.apply(rect)
+   
+            image_scaled = pygame.transform.scale(self.image, screen_rect.size)
 
-            # drawing the obstacle
-            screen.blit(self.image_cropped, obstacle_camera_frame)
-
+            screen.blit(image_scaled, screen_rect.topleft)
 
 
 
