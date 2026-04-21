@@ -241,7 +241,7 @@ def update_level(dt, keys, events):
 
     # When the player health reaches 0, "game_over" flag is returned
     # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator
-    if player.health <= 0:
+    if player.health <= 0 or timer.seconds <= 0:
         return "game_over"
 
 def draw_level(screen):

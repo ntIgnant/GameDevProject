@@ -40,6 +40,7 @@ class Timer():
                 self.text = self.font.render(self.time_format(), True, self.colour)        
             
     def draw(self, screen):
+        self.background_rect = self.background_img.get_rect(center=(settings.WIDTH//2, 50))
         screen.blit(self.background_img, self.background_rect)
         
         text_rect = self.text.get_rect(center = self.background_rect.center)
