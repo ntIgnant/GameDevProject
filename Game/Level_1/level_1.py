@@ -64,6 +64,9 @@ contact_damage_timer = 0.0
 # Higher number -> more damange
 bullet_damage = 10
 
+# The bullets will appear from the end of the gun
+gun_offset = 25
+
 # Variable that defines how many seconadry enemies are going to spawn (4 as default, maybe 6 to make it harder?)
 SEC_ENEMY_COUNT = 4
 
@@ -207,6 +210,7 @@ def start_level():
     timer.minutes = 2
     timer.seconds = 120
     timer.text = timer.font.render(timer.time_format(), True, timer.colour)
+    pygame.time.set_timer(timer.timer_event, 1000)
 
 
 def start_resume_countdown():
@@ -269,6 +273,14 @@ def update_level(dt, keys, events):
     if resume_countdown > 0:
         resume_countdown = max(0.0, resume_countdown - dt)
         return None
+    
+    # The player's asset will be flipped based on the direction of the mouse
+    # So, the player always faces the correct direction when shooting
+    if player:
+        mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
+        mouse_world = mouse_screen / camera.zoom + camera.offset
+        player_pos = pygame.Vector2(player.rect.center)
+        player.facing_right = mouse_world.x > player_pos.x
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -278,8 +290,9 @@ def update_level(dt, keys, events):
             direction = mouse_world - player_pos
 
             if direction.length_squared() > 0:
+                normalised_direction = direction.normalize()
                 bullets.append(
-                    GunProjectile(*player.rect.center, direction.normalize())
+                    GunProjectile(player.rect.centerx + normalised_direction.x * gun_offset,player.rect.centery + normalised_direction.y * gun_offset, normalised_direction)
                 )
 
     # Logic for bullet collision with sec-enemy (based on restricted areas)
