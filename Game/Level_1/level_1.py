@@ -11,6 +11,7 @@ from Game.obstacles import Obstacles
 from Game.timer import Timer
 from Game.camera import Camera
 import Game.pause_menu as pause_menu
+import Game.audio as audio
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -281,6 +282,7 @@ def update_level(dt, keys, events):
                 bullets.append(
                     GunProjectile(*player.rect.center, direction.normalize())
                 )
+                audio.play_sound("gun_shot")
 
     # Logic for bullet collision with sec-enemy (based on restricted areas)
     # If the bullet overlaps a restricted area 'e.g enemy area/off map ', then they disapear
@@ -295,6 +297,7 @@ def update_level(dt, keys, events):
         for enemy in enemies:
             if bullet.rect.colliderect(enemy.rect):
                 enemy.take_damage(bullet_damage) # Update enemy health (take damange)
+                audio.play_sound("alien_hit")
                 hit_enemy = True
                 break
 
@@ -330,6 +333,7 @@ def update_level(dt, keys, events):
     # When the player health reaches 0, "game_over" flag is returned
     # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator
     if player.health <= 0 or timer.seconds <= 0:
+        audio.play_sound("game_over")
         return "game_over"
 
 def draw_level(screen):
