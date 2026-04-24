@@ -43,5 +43,4 @@ python main.py
 ## Notes
 
 - Do not use Python `3.14` for this project. `pygame.mixer` had issues there during setup.
-- Teammates do not need `pyenv`, but they do need Python `3.13.3`.
 - If you use `pyenv` and `python` is not pointing to `3.13.3`, run `pyenv local 3.13.3` before creating the venv.
