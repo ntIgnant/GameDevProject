@@ -36,7 +36,7 @@ class Player:
 
         # loading walk animation (can be moved elsewhere)
         sheet = pygame.image.load(
-            os.path.join(ASSETS_DIR, "Characters", "Player", "player_walk.png")
+            os.path.join(ASSETS_DIR, "Characters", "Player", "player_attack.png")
         ).convert_alpha()
 
         self.frames = []
@@ -210,9 +210,6 @@ class Player:
 
            #moving up and down logic
             self._move_with_collisions(0, int(dy * self.speed * dt), blockers, area_rect)
-
-            if dx != 0:
-                self.facing_right = dx > 0
 
             self.timer += dt
             if self.timer > 0.1:

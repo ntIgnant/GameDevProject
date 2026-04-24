@@ -10,3 +10,6 @@ Game/Level_1/__pycache__/
 .vscode/
 .idea/
 
+# local python version (pyenv)
+.python-version
+
