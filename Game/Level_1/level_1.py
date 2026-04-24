@@ -196,8 +196,8 @@ def start_level():
     player = Player(LEVEL_AREA.center)
     bullets = []
     obstacle = Obstacles()
-    obstacle.spawn(area_rect=LEVEL_AREA)
     obstacle.set_corner_blockers(build_corner_object_rects())
+    obstacle.spawn(area_rect=LEVEL_AREA)
     enemies = spawn_secondary_enemies(
         SEC_ENEMY_COUNT,
         LEVEL_AREA,

@@ -34,8 +34,8 @@ class Obstacles:
             y = random.randrange(area_rect.top, max_y + 1)
             new_rect = pygame.Rect(x, y, self.size, self.size)
             overlap = False
-            #check for overlapping with other obstacles
-            for rect in self.coordinates:
+            # Reject positions that overlap restricted corner blockers or existing obstacles.
+            for rect in self.collision_rects:
                 if new_rect.colliderect(rect):
                     overlap = True
                     break
