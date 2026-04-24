@@ -7,8 +7,11 @@ import Game.menu_settings as menu_settings # settings menu logic
 import Game.Level_1.level_1 as level_1 # Level 1 logic
 import Game.pause_menu as pause_menu
 import Game.game_over as game_over
+import Game.audio as audio
 
 pygame.init()
+audio.init_audio()
+audio.load_game_sfx()
 
 screen = pygame.display.set_mode(settings.CURRENT_SCREEN_SIZE)
 
@@ -124,4 +127,5 @@ while running:
 
     pygame.display.update()
 
+audio.stop_all_sfx()
 pygame.quit()

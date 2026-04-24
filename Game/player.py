@@ -2,6 +2,7 @@ import os
 import math
 import pygame
 import Game.settings as settings
+import Game.audio as audio
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -116,7 +117,10 @@ class Player:
     # This function is for the logic of damage to the player. It reduces the received amount of damage whenever it is called (called in level_1.py when the enemy tocuhes it)
     # The rate at what the player received the damage can be modified in the parameters of level_1.py 'contact_damage_cooldown' and 'contact_damage_timer'
     def take_damage(self, amount):
+        if amount <= 0 or self.health <= 0:
+            return
         self.health = max(0, self.health - amount)
+        audio.play_sound("player_hit")
 
 
     def handle_event(self, event):
