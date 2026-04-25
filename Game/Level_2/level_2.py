@@ -1,4 +1,4 @@
-# Controller of Logic for Level 1
+# Controller of Logic for Level 2
 import math
 import os
 import random
@@ -6,8 +6,8 @@ import pygame
 import Game.settings as settings
 from Game.player import Player
 from Game.gun import GunProjectile
-from .sec_enemy_lev1 import SecEnemyLev1, load_walk_frames
-from .boss_lev1 import BossLev1, load_walk_frames_boss, load_attack_frames_boss
+from .sec_enemy_lev2 import SecEnemyLev2, load_walk_frames
+from .boss_lev2 import BossLev2, load_walk_frames_boss, load_attack_frames_boss
 from Game.obstacles import Obstacles
 from Game.puddle import load_frames_puddle, LavaPuddle
 from Game.timer import Timer
@@ -19,11 +19,11 @@ from Game.upgrades import Upgrades
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 BASE_LEVEL_SIZE = settings.RESOLUTIONS["HD"]
-BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo2.png")
+BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo5.png")
 
 
 # Allowed area where the player/enemies can move | NOTE: This will be different depending on the level (corner boxes differ between background imgs)
-LEVEL_1_AREA_CONFIG = {
+LEVEL_2_AREA_CONFIG = {
     # Area for the player/enemies to move (big square)
     "walkable_area": [96, 170, 1095, 430],
 
@@ -31,25 +31,28 @@ LEVEL_1_AREA_CONFIG = {
     # Each item is [offset_x, offset_y, width, height], measured from the walkable area's top-left corner.
     "corner_objects": [
         # Top left corner
-        [0, 0, 210, 80],
+        [0, 20, 150, 80],
+
+        # Upper middle object (LEFT)
+        [260, 10, 120, 30],
+
+        # Upper middle object (RIGHT)
+        [700, 10, 120, 30],
 
         # Top right corner
-        [900, -30, 190, 80],
+        [930, 10, 150, 90],
 
         # Bottom left corner
-        [0, 280, 100, 100],
+        [0, 310, 100, 100],
 
         # Bottom right corner
-        [975, 280, 120, 180],
+        [975, 350, 120, 70],
     ]
 }
 
 LEVEL_AREA = pygame.Rect(0, 0, 0, 0)
 
-# Takes the same value set in settings
-# True/False for DEV_MODE (explanation in settings.py)
-DEV_MODE = settings.GLOBAL_DEV_MODE
-
+DEV_MODE = settings.GLOBAL_DEV_MODE # Mirrors the global development flag in settings.py
 background = None
 player = None
 upgrades_spawn = []
@@ -83,10 +86,8 @@ gun_offset = 25
 
 # Variable that defines how many seconadry enemies are going to spawn (4 as default, maybe 6 to make it harder?)
 BASE_SEC_ENEMY_COUNT = 4
-
-# Partial logic for DEVMODE flag in settings
-# if GLOBAL_DEV_MODE is true, show all the restricted areas AND set sec_enemies of all the levels to 0
 SEC_ENEMY_COUNT = 0 if settings.GLOBAL_DEV_MODE else BASE_SEC_ENEMY_COUNT
+ENABLE_BOSS = True
 
 # This function checks for collision between the sec_enemy and the player, but for the comparision
 # it adds 'tolerance' to the enemy area to make sure player and enemy collide. This to make sure the damage is received
@@ -103,11 +104,11 @@ def scale_level_rect(rect_values):
 def rebuild_level_area():
     global LEVEL_AREA
 
-    LEVEL_AREA = scale_level_rect(LEVEL_1_AREA_CONFIG["walkable_area"])
+    LEVEL_AREA = scale_level_rect(LEVEL_2_AREA_CONFIG["walkable_area"])
 
 def build_corner_object_rects():
     rects = []
-    for offset_x, offset_y, width, height in LEVEL_1_AREA_CONFIG["corner_objects"]:
+    for offset_x, offset_y, width, height in LEVEL_2_AREA_CONFIG["corner_objects"]:
         scaled_rect = scale_level_rect((offset_x, offset_y, width, height))
         rects.append(
             pygame.Rect(
@@ -154,7 +155,7 @@ def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, player_rec
         if any(candidate_rect.colliderect(enemy.rect.inflate(padding * 2, padding * 2)) for enemy in spawned_enemies):
             continue
 
-        spawned_enemies.append(SecEnemyLev1(spawn_pos, walk_frames))
+        spawned_enemies.append(SecEnemyLev2(spawn_pos, walk_frames))
 
     return spawned_enemies
 
@@ -186,7 +187,7 @@ def spawn_boss(area_rect, obstacles, walk_frames_boss, attack_frames_boss, playe
         if any(candidate_rect.colliderect(blocker) for blocker in blockers):
             continue
 
-        return BossLev1(spawn_pos, walk_frames_boss, attack_frames_boss)
+        return BossLev2(spawn_pos, walk_frames_boss, attack_frames_boss)
 
     return None
 
@@ -242,7 +243,7 @@ def rebuild_layout():
 
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
-    """Call once when entering Level 1."""
+    """Call once when entering Level 2."""
     global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss
 
     rebuild_level_area()
@@ -403,7 +404,7 @@ def update_level(dt, keys, events):
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
     
     # If all the secondary enemies are defeated, spawn the boss
-    if boss is None and not enemies:
+    if ENABLE_BOSS and boss is None and not enemies:
         boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, player.rect)
         
     if boss:
@@ -457,7 +458,6 @@ def update_level(dt, keys, events):
         
         if not boss.is_alive():
             boss = None
-            return "level_complete"
         
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
