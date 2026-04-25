@@ -12,6 +12,7 @@ from Game.timer import Timer
 from Game.camera import Camera
 import Game.pause_menu as pause_menu
 import Game.audio as audio
+from Game.upgrades import Upgrades
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -45,6 +46,7 @@ LEVEL_AREA = pygame.Rect(0, 0, 0, 0)
 DEV_MODE = False # This boolean is to view the restricted walkable-areas and coordinates of mouse in the game (for developement only) | False by default
 background = None
 player = None
+upgrades_spawn = []
 obstacle = None
 enemies = []
 bullets = []
@@ -321,7 +323,7 @@ def update_level(dt, keys, events):
     bullets = active_bullets
 
     timer.update(events)
-    player.update(dt, keys, obstacle, [enemy.rect for enemy in enemies], LEVEL_AREA)
+    player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
 
     if contact_damage_timer > 0:
@@ -334,6 +336,11 @@ def update_level(dt, keys, events):
         other_enemy_rects = [enemy.rect for enemy in enemies if enemy is not e]
         target_point = get_enemy_target_point(player.rect.center, e.pos, index, len(enemies))
         e.update(dt, target_point, obstacle, player.rect, LEVEL_AREA, other_enemy_rects)
+
+    #Spawn upgrades on dead enemy poss, takes the dead enemy then takes its position 
+    dead_enemies = [enemy for enemy in enemies if not enemy.is_alive()]
+    for enemy in dead_enemies:
+        upgrades_spawn.append(Upgrades(enemy.pos.x, enemy.pos.y))
 
     # If enemy health <= 0, enemy is dead and will disapear (restricted areas will be ignored)
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
@@ -368,6 +375,9 @@ def draw_level(screen):
 
     for e in enemies:
         e.draw(screen, camera)
+
+    for u in upgrades_spawn:
+        u.draw(screen, camera)
 
 
     obstacle.draw(screen, camera)
