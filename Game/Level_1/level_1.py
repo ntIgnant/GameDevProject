@@ -192,12 +192,13 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, upgrades_spawn
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
     bullets = []
     obstacle = Obstacles()
+    upgrades_spawn = []
     obstacle.set_corner_blockers(build_corner_object_rects())
     obstacle.spawn(area_rect=LEVEL_AREA)
     enemies = spawn_secondary_enemies(
@@ -354,6 +355,8 @@ def update_level(dt, keys, events):
     # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator
     if player.health <= 0 or timer.seconds <= 0:
         audio.play_sound("game_over")
+        for upgrade in upgrades_spawn:
+            upgrades_spawn.remove(upgrade)
         return "game_over"
 
 def draw_level(screen):
