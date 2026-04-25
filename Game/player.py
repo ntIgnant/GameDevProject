@@ -2,13 +2,14 @@ import os
 import math
 import pygame
 import Game.settings as settings
+import Game.audio as audio
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 
 class Player:
     def __init__(self, spawn_pos=None):
-        self.size = 40
+        self.size = 64
         spawn_x = settings.WIDTH // 2
         spawn_y = settings.HEIGHT // 2
         if spawn_pos is not None:
@@ -35,7 +36,7 @@ class Player:
 
         # loading walk animation (can be moved elsewhere)
         sheet = pygame.image.load(
-            os.path.join(ASSETS_DIR, "Characters", "Player", "player_walk.png")
+            os.path.join(ASSETS_DIR, "Characters", "Player", "player_attack.png")
         ).convert_alpha()
 
         self.frames = []
@@ -92,7 +93,7 @@ class Player:
             blockers.extend(enemy_rects)
         return blockers
 
-    def _move_with_collisions(self, move_x, move_y, blockers, area_rect=None):
+    def _move_with_collisions(self, move_x, move_y, blockers, upgrades, area_rect=None):
         if move_x != 0:
             self.rect.x += move_x
             for blocker in blockers:
@@ -101,6 +102,13 @@ class Player:
                         self.rect.right = blocker.left
                     elif move_x < 0:
                         self.rect.left = blocker.right
+            
+            # Check for collision with the upgrades
+            for upgrade in upgrades:
+                if self.rect.colliderect(upgrade.rect):
+                    upgrade.random_upgrade(self)
+                    upgrades.remove(upgrade)
+
 
         if move_y != 0:
             self.rect.y += move_y
@@ -110,13 +118,22 @@ class Player:
                         self.rect.bottom = blocker.top
                     elif move_y < 0:
                         self.rect.top = blocker.bottom
+            
+            # Check for collision with the upgrades
+            for upgrade in upgrades:
+                if self.rect.colliderect(upgrade.rect):
+                    upgrade.random_upgrade(self)
+                    upgrades.remove(upgrade)
 
         self._clamp_to_area(area_rect)
 
     # This function is for the logic of damage to the player. It reduces the received amount of damage whenever it is called (called in level_1.py when the enemy tocuhes it)
     # The rate at what the player received the damage can be modified in the parameters of level_1.py 'contact_damage_cooldown' and 'contact_damage_timer'
     def take_damage(self, amount):
+        if amount <= 0 or self.health <= 0:
+            return
         self.health = max(0, self.health - amount)
+        audio.play_sound("player_hit")
 
 
     def handle_event(self, event):
@@ -141,7 +158,7 @@ class Player:
         self.dash_cooldown_remaining = self.dash_cooldown
 
     # renemy_rects and area_rect are important for the 'restricted areas' that the player cannot access to
-    def update(self, dt, keys, obstacles, enemy_rects=None, area_rect=None):
+    def update(self, dt, keys, obstacles, upgrades, enemy_rects=None, area_rect=None):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
 
@@ -178,7 +195,7 @@ class Player:
 
             self.dash_move_remainder.update(dash_delta.x - move_x, dash_delta.y - move_y)
 
-            self._move_with_collisions(move_x, move_y, blockers, area_rect)
+            self._move_with_collisions(move_x, move_y, blockers, upgrades, area_rect)
 
             self.dash_time_remaining -= dash_step_time
             if self.dash_time_remaining <= 0:
@@ -202,13 +219,11 @@ class Player:
             blockers = self._blocking_rects(obstacles, enemy_rects)
 
            #moving left and right logic
-            self._move_with_collisions(int(dx * self.speed * dt), 0, blockers, area_rect)
+           #moving left and right logic
+            self._move_with_collisions(int(dx * self.speed * dt), 0, blockers, upgrades, area_rect)
 
            #moving up and down logic
-            self._move_with_collisions(0, int(dy * self.speed * dt), blockers, area_rect)
-
-            if dx != 0:
-                self.facing_right = dx > 0
+            self._move_with_collisions(0, int(dy * self.speed * dt), blockers, upgrades, area_rect)
 
             self.timer += dt
             if self.timer > 0.1:
@@ -351,6 +366,9 @@ class Player:
 # flip when moving left
         if not self.facing_right:
             frame = pygame.transform.flip(frame, True, False)
+
+        # Transform the image to fit the player hitbox
+        frame = pygame.transform.scale(frame, (self.rect.width, self.rect.height))
 
         self.draw_health_ui(screen,camera)
         # creating a new frame for the camera pov

@@ -11,6 +11,8 @@ from Game.obstacles import Obstacles
 from Game.timer import Timer
 from Game.camera import Camera
 import Game.pause_menu as pause_menu
+import Game.audio as audio
+from Game.upgrades import Upgrades
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
@@ -44,6 +46,7 @@ LEVEL_AREA = pygame.Rect(0, 0, 0, 0)
 DEV_MODE = False # This boolean is to view the restricted walkable-areas and coordinates of mouse in the game (for developement only) | False by default
 background = None
 player = None
+upgrades_spawn = []
 obstacle = None
 enemies = []
 bullets = []
@@ -63,6 +66,9 @@ contact_damage_timer = 0.0
 # 'damage rate' of one player's bullet. Used to damange enemy
 # Higher number -> more damange
 bullet_damage = 10
+
+# The bullets will appear from the end of the gun
+gun_offset = 25
 
 # Variable that defines how many seconadry enemies are going to spawn (4 as default, maybe 6 to make it harder?)
 SEC_ENEMY_COUNT = 4
@@ -192,8 +198,8 @@ def start_level():
     player = Player(LEVEL_AREA.center)
     bullets = []
     obstacle = Obstacles()
-    obstacle.spawn(area_rect=LEVEL_AREA)
     obstacle.set_corner_blockers(build_corner_object_rects())
+    obstacle.spawn(area_rect=LEVEL_AREA)
     enemies = spawn_secondary_enemies(
         SEC_ENEMY_COUNT,
         LEVEL_AREA,
@@ -207,6 +213,7 @@ def start_level():
     timer.minutes = 2
     timer.seconds = 120
     timer.text = timer.font.render(timer.time_format(), True, timer.colour)
+    pygame.time.set_timer(timer.timer_event, 1000)
 
 
 def start_resume_countdown():
@@ -269,6 +276,14 @@ def update_level(dt, keys, events):
     if resume_countdown > 0:
         resume_countdown = max(0.0, resume_countdown - dt)
         return None
+    
+    # The player's asset will be flipped based on the direction of the mouse
+    # So, the player always faces the correct direction when shooting
+    if player:
+        mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
+        mouse_world = mouse_screen / camera.zoom + camera.offset
+        player_pos = pygame.Vector2(player.rect.center)
+        player.facing_right = mouse_world.x > player_pos.x
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -278,9 +293,11 @@ def update_level(dt, keys, events):
             direction = mouse_world - player_pos
 
             if direction.length_squared() > 0:
+                normalised_direction = direction.normalize()
                 bullets.append(
-                    GunProjectile(*player.rect.center, direction.normalize())
+                    GunProjectile(player.rect.centerx + normalised_direction.x * gun_offset,player.rect.centery + normalised_direction.y * gun_offset, normalised_direction)
                 )
+                audio.play_sound("gun_shot")
 
     # Logic for bullet collision with sec-enemy (based on restricted areas)
     # If the bullet overlaps a restricted area 'e.g enemy area/off map ', then they disapear
@@ -299,6 +316,7 @@ def update_level(dt, keys, events):
         for enemy in enemies:
             if bullet.rect.colliderect(enemy.rect):
                 enemy.take_damage(bullet_damage) # Update enemy health (take damange)
+                audio.play_sound("alien_hit")
                 hit_enemy = True
                 break
 
@@ -309,7 +327,7 @@ def update_level(dt, keys, events):
     bullets = active_bullets
 
     timer.update(events)
-    player.update(dt, keys, obstacle, [enemy.rect for enemy in enemies], LEVEL_AREA)
+    player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
 
     if contact_damage_timer > 0:
@@ -323,6 +341,11 @@ def update_level(dt, keys, events):
         target_point = get_enemy_target_point(player.rect.center, e.pos, index, len(enemies))
         e.update(dt, target_point, obstacle, player.rect, LEVEL_AREA, other_enemy_rects)
 
+    #Spawn upgrades on dead enemy poss, takes the dead enemy then takes its position 
+    dead_enemies = [enemy for enemy in enemies if not enemy.is_alive()]
+    for enemy in dead_enemies:
+        upgrades_spawn.append(Upgrades(enemy.pos.x, enemy.pos.y))
+
     # If enemy health <= 0, enemy is dead and will disapear (restricted areas will be ignored)
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
     
@@ -334,6 +357,7 @@ def update_level(dt, keys, events):
     # When the player health reaches 0, "game_over" flag is returned
     # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator
     if player.health <= 0 or timer.seconds <= 0:
+        audio.play_sound("game_over")
         return "game_over"
 
 def draw_level(screen):
@@ -355,6 +379,9 @@ def draw_level(screen):
 
     for e in enemies:
         e.draw(screen, camera)
+
+    for u in upgrades_spawn:
+        u.draw(screen, camera)
 
 
     obstacle.draw(screen, camera)

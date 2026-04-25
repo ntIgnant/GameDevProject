@@ -3,7 +3,7 @@ import os
 import Game.settings as settings # This is mainly for the resolution (HD, or FHD)
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Game over")
+ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Game_over")
 PAUSE_ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "pause_menu")
 
 BG_PATH =  os.path.join(ASSETS_DIR, "BG_game_over.png")
