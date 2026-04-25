@@ -306,6 +306,10 @@ def update_level(dt, keys, events):
         bullet.update(dt)
         if not LEVEL_AREA.colliderect(bullet.rect):
             continue
+        
+        #Shots should stop at walls and obstacles instead of passing through cover
+        if any(bullet.rect.colliderect(rect) for rect in obstacle.collision_rects):
+            continue
 
         # Check for collision between bullet and enemy, if there is collision, sec-enemy takes damange (value defined at bullet_damange)
         hit_enemy = False
