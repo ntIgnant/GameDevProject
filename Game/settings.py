@@ -2,7 +2,7 @@
 
 # When this flag is TRUE, it is dev mode
 # show all restricted areas and set the secondary enemies to each level to 0 (FOR DEVELOPEMENT)
-GLOBAL_DEV_MODE = False # False as default (for user)
+GLOBAL_DEV_MODE = True # False as default (for user)
 
 # Resolution
 RESOLUTIONS = {

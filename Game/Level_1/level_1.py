@@ -243,12 +243,13 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 1."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss, upgrades_spawn
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
     bullets = []
     puddles = []
+    upgrades_spawn = []
     boss = None
     obstacle = Obstacles()
     obstacle.set_corner_blockers(build_corner_object_rects())
