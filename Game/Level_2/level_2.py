@@ -383,6 +383,8 @@ def update_level(dt, keys, events):
     timer.update(events)
     player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
+    # Pull one multiplier from the player so freeze can slow every enemy here
+    enemy_speed_multiplier = player.get_enemy_speed_multiplier()
 
     if contact_damage_timer > 0:
         contact_damage_timer = max(0.0, contact_damage_timer - dt)
@@ -393,7 +395,7 @@ def update_level(dt, keys, events):
     for index, e in enumerate(enemies):
         other_enemy_rects = [enemy.rect for enemy in enemies if enemy is not e]
         target_point = get_enemy_target_point(player.rect.center, e.pos, index, len(enemies))
-        e.update(dt, target_point, obstacle, player.rect, LEVEL_AREA, other_enemy_rects)
+        e.update(dt, target_point, obstacle, player.rect, LEVEL_AREA, other_enemy_rects, enemy_speed_multiplier)
 
     #Spawn upgrades on dead enemy poss, takes the dead enemy then takes its position 
     dead_enemies = [enemy for enemy in enemies if not enemy.is_alive()]
@@ -408,7 +410,14 @@ def update_level(dt, keys, events):
         boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, player.rect)
         
     if boss:
-        boss.update(dt, player.rect.center, obstacle, player_rect= player.rect, area_rect= LEVEL_AREA)
+        boss.update(
+            dt,
+            player.rect.center,
+            obstacle,
+            player_rect=player.rect,
+            area_rect=LEVEL_AREA,
+            speed_multiplier=enemy_speed_multiplier,
+        )
         
         # Spawn the puddle
         while boss.puddle_queue:
