@@ -145,9 +145,9 @@ class Player:
 
 
     def handle_event(self, event):
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
             self.dash_requested = True
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_g:
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
             self.area_freeze_requested = True
 
     def _start_dash(self, dash_dir):
@@ -191,14 +191,14 @@ class Player:
         if self.area_freeze_time_remaining > 0:
             self.area_freeze_time_remaining = max(0, self.area_freeze_time_remaining - dt)
 
-        # c triggers dash once only even in held down
-        dash_key_down = bool(keys[pygame.K_c])
+        # E triggers dash once only even if held down
+        dash_key_down = bool(keys[pygame.K_e])
         if dash_key_down and not self.dash_key_was_down:
             self.dash_requested = True
         self.dash_key_was_down = dash_key_down
 
-        # Trigger G once per press so holding it does not spam the ability
-        freeze_key_down = bool(keys[pygame.K_g])
+        # Trigger Q once per press so holding it does not spam the ability
+        freeze_key_down = bool(keys[pygame.K_q])
         if freeze_key_down and not self.area_freeze_key_was_down:
             self.area_freeze_requested = True
         self.area_freeze_key_was_down = freeze_key_down
