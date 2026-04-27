@@ -124,9 +124,10 @@ class BossLev2:
         self.rect.clamp_ip(area_rect)
         self.pos.update(self.rect.centerx, self.rect.centery)
 
-    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None):
+    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None, speed_multiplier=1.0):
         to_target = pygame.Vector2(target_center) - self.pos
         dist = to_target.length()
+        speed_scale = max(0.0, speed_multiplier)
         
         # Attack timer to keep track of the time since the last attack
         self.last_attack += dt
@@ -164,7 +165,7 @@ class BossLev2:
             self.frame_index = 0.0
 
         if dist > 2 and self.state == "chase":
-            movement = to_target.normalize() * self.speed * dt
+            movement = to_target.normalize() * self.speed * speed_scale * dt
 
             # The asset of the enemy should face the same as the direction it is walking to
 
@@ -233,7 +234,7 @@ class BossLev2:
 
             # Animation for walking/chasing
             if self.walk_frames:
-                self.frame_index += self.anim_fps * dt
+                self.frame_index += self.anim_fps * dt * speed_scale
                 if self.frame_index >= len(self.walk_frames):
                     self.frame_index = 0.0
 

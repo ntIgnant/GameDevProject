@@ -33,6 +33,14 @@ class Player:
         self.dash_direction = pygame.Vector2(0, 0)
         self.dash_move_remainder = pygame.Vector2(0, 0)
         self.last_move_dir = pygame.Vector2(1, 0)
+        # Freeze keeps one timer for uptime and one for cooldown
+        self.area_freeze_duration = 5.0
+        self.area_freeze_time_remaining = 0.0
+        self.area_freeze_cooldown = 60.0
+        self.area_freeze_cooldown_remaining = 0.0
+        self.area_freeze_slow_multiplier = 0.5
+        self.area_freeze_requested = False
+        self.area_freeze_key_was_down = False
 
         # loading walk animation (can be moved elsewhere)
         sheet = pygame.image.load(
@@ -139,6 +147,8 @@ class Player:
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
             self.dash_requested = True
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_g:
+            self.area_freeze_requested = True
 
     def _start_dash(self, dash_dir):
         if self.dash_cooldown_remaining > 0 or self.dashing:
@@ -157,16 +167,45 @@ class Player:
             self.facing_right = self.dash_direction.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
 
+    def _start_area_freeze(self):
+        if self.area_freeze_cooldown_remaining > 0 or self.area_freeze_time_remaining > 0:
+            return
+
+        self.area_freeze_time_remaining = self.area_freeze_duration
+        self.area_freeze_cooldown_remaining = self.area_freeze_cooldown
+
+    def is_area_freeze_active(self):
+        return self.area_freeze_time_remaining > 0
+
+    def get_enemy_speed_multiplier(self):
+        if self.is_area_freeze_active():
+            return self.area_freeze_slow_multiplier
+        return 1.0
+
     # renemy_rects and area_rect are important for the 'restricted areas' that the player cannot access to
     def update(self, dt, keys, obstacles, upgrades, enemy_rects=None, area_rect=None):
         if self.dash_cooldown_remaining > 0:
             self.dash_cooldown_remaining = max(0, self.dash_cooldown_remaining - dt)
+        if self.area_freeze_cooldown_remaining > 0:
+            self.area_freeze_cooldown_remaining = max(0, self.area_freeze_cooldown_remaining - dt)
+        if self.area_freeze_time_remaining > 0:
+            self.area_freeze_time_remaining = max(0, self.area_freeze_time_remaining - dt)
 
         # c triggers dash once only even in held down
         dash_key_down = bool(keys[pygame.K_c])
         if dash_key_down and not self.dash_key_was_down:
             self.dash_requested = True
         self.dash_key_was_down = dash_key_down
+
+        # Trigger G once per press so holding it does not spam the ability
+        freeze_key_down = bool(keys[pygame.K_g])
+        if freeze_key_down and not self.area_freeze_key_was_down:
+            self.area_freeze_requested = True
+        self.area_freeze_key_was_down = freeze_key_down
+
+        if self.area_freeze_requested:
+            self._start_area_freeze()
+            self.area_freeze_requested = False
 
         dx = keys[pygame.K_d] - keys[pygame.K_a]
         dy = keys[pygame.K_s] - keys[pygame.K_w]
@@ -218,11 +257,10 @@ class Player:
             self.last_move_dir.update(dx, dy)
             blockers = self._blocking_rects(obstacles, enemy_rects)
 
-           #moving left and right logic
-           #moving left and right logic
+           # move left and right
             self._move_with_collisions(int(dx * self.speed * dt), 0, blockers, upgrades, area_rect)
 
-           #moving up and down logic
+           # move up and down
             self._move_with_collisions(0, int(dy * self.speed * dt), blockers, upgrades, area_rect)
 
             self.timer += dt
@@ -236,36 +274,82 @@ class Player:
         self._clamp_to_area(area_rect)
         self.display_health += (self.health - self.display_health) * 5.0 * dt
 
-    def draw_dash_ui(self, screen, x, y):
-        # dash cooldown bar
+    def _draw_ability_ui(
+        self,
+        screen,
+        x,
+        y,
+        label_text,
+        cooldown_total,
+        cooldown_remaining,
+        active_total=0.0,
+        active_remaining=0.0,
+        active_color=(82, 201, 122),
+        cooldown_color=(70, 150, 230),
+        ready_color=(82, 201, 122),
+    ):
+        # Dash and freeze use the same little cooldown bar
         bar_width = 60
         bar_height = 8
-        cooldown_ratio = 1.0
-        if self.dash_cooldown > 0:
-            cooldown_ratio = 1.0 - (self.dash_cooldown_remaining / self.dash_cooldown)
-        cooldown_ratio = max(0.0, min(1.0, cooldown_ratio))
+
+        if active_remaining > 0 and active_total > 0:
+            fill_ratio = max(0.0, min(1.0, active_remaining / active_total))
+            fill_color = active_color
+            status_text = f"ACTIVE {active_remaining:.1f}s"
+            status_color = active_color
+        else:
+            fill_ratio = 1.0
+            if cooldown_total > 0:
+                fill_ratio = 1.0 - (cooldown_remaining / cooldown_total)
+            fill_ratio = max(0.0, min(1.0, fill_ratio))
+            if cooldown_remaining <= 0:
+                fill_color = ready_color
+                status_text = "READY"
+                status_color = ready_color
+            else:
+                fill_color = cooldown_color
+                status_text = f"{cooldown_remaining:.1f}s"
+                status_color = (210, 225, 255)
 
         frame_rect = pygame.Rect(x, y, bar_width, bar_height)
-        fill_width = int(bar_width * cooldown_ratio)
+        fill_width = int(bar_width * fill_ratio)
         fill_rect = pygame.Rect(x, y, fill_width, bar_height)
 
         pygame.draw.rect(screen, (18, 18, 24), frame_rect)
         if fill_width > 0:
-            fill_color = (82, 201, 122) if self.dash_cooldown_remaining <= 0 else (70, 150, 230)
             pygame.draw.rect(screen, fill_color, fill_rect)
         pygame.draw.rect(screen, (0, 0, 0), frame_rect, 2)
 
-        label = self.ui_font.render("Dash", True, (255, 255, 255))
-        if self.dash_cooldown_remaining <= 0:
-            status_text = "READY"
-            status_color = (140, 255, 170)
-        else:
-            status_text = f"{self.dash_cooldown_remaining:.1f}s"
-            status_color = (210, 225, 255)
+        label = self.ui_font.render(label_text, True, (255, 255, 255))
         status = self.ui_font.render(status_text, True, status_color)
 
         screen.blit(label, (x, y - 12))
         screen.blit(status, (x + bar_width + 4, y - 3))
+
+    def draw_dash_ui(self, screen, x, y):
+        self._draw_ability_ui(
+            screen,
+            x,
+            y,
+            "Dash",
+            self.dash_cooldown,
+            self.dash_cooldown_remaining,
+        )
+
+    def draw_area_freeze_ui(self, screen, x, y):
+        self._draw_ability_ui(
+            screen,
+            x,
+            y,
+            "Freeze",
+            self.area_freeze_cooldown,
+            self.area_freeze_cooldown_remaining,
+            active_total=self.area_freeze_duration,
+            active_remaining=self.area_freeze_time_remaining,
+            active_color=(120, 220, 255),
+            cooldown_color=(80, 150, 255),
+            ready_color=(170, 240, 255),
+        )
 
     def draw_health_ui(self, screen, camera):
        
@@ -359,6 +443,7 @@ class Player:
         # Draw a black outline around the health bar
         b_rect = final_bar_surf.get_rect(topleft=bar_draw_pos)
         pygame.draw.rect(screen, (0, 0, 0), b_rect, 2)
+        self.draw_area_freeze_ui(screen, b_rect.left, b_rect.top - 36)
         self.draw_dash_ui(screen, b_rect.left, b_rect.top - 18)
 
     def draw(self, screen, camera):
