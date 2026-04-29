@@ -6,6 +6,7 @@ import Game.menu as menu # Menu logic
 import Game.menu_settings as menu_settings # settings menu logic
 import Game.Level_1.level_1 as level_1 # Level 1 logic
 import Game.Level_2.level_2 as level_2 # Level 2 logic
+import Game.Level_3.level_3 as level_3 # Level 3 logic
 import Game.pause_menu as pause_menu
 import Game.game_over as game_over
 import Game.audio as audio
@@ -28,6 +29,7 @@ clock = pygame.time.Clock()
 
 level_1.load_assets()
 level_2.load_assets()
+level_3.load_assets()
 
 running = True # boolean for the general game loop
 state = "menu" # this will vary depending on the state of the game [menu, menu_settings, level, etc]
@@ -73,6 +75,8 @@ while running:
                         start_level(level_1)
                     elif next_level == 2:
                         start_level(level_2)
+                    elif next_level == 3:
+                        start_level(level_3)
                     else:
                         start_level(level_1)
 
@@ -102,6 +106,7 @@ while running:
                 game_over.rebuild_layout()
                 level_1.rebuild_layout()
                 level_2.rebuild_layout()
+                level_3.rebuild_layout()
         
         # Case where 'game_over' flag is returned
         # This triggers the game over screen to the user
@@ -123,13 +128,19 @@ while running:
         elif level_action == "game_over":
             state = "game_over"
 
-        # Action to 'jump to a next level'
-        # TODO: add level_3 statement
+        # Action to jump to the next level
         elif level_action == "level_complete":
+
+            # The following, checks for the current level, and 'jumps' to its next
+            # Also, verifies the list LEVELS_COMPLETED to save the progress for next time (Stat, vs New Game)
             if current_level is level_1:
                 if 1 not in settings.LEVELS_COMPLETED:
                     settings.LEVELS_COMPLETED.append(1)
                 start_level(level_2)
+            elif current_level is level_2:
+                if 2 not in settings.LEVELS_COMPLETED:
+                    settings.LEVELS_COMPLETED.append(2)
+                start_level(level_3)
 
     # draw current state
     if state == "menu":

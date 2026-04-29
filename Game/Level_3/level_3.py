@@ -1,4 +1,4 @@
-# Controller of Logic for Level 2
+# Controller of Logic for Level 3
 import math
 import os
 import random
@@ -6,8 +6,8 @@ import pygame
 import Game.settings as settings
 from Game.player import Player
 from Game.gun import GunProjectile
-from .sec_enemy_lev2 import SecEnemyLev2, load_walk_frames
-from .boss_lev2 import BossLev2, load_walk_frames_boss, load_attack_frames_boss
+from .sec_enemy_lev3 import SecEnemyLev3, load_walk_frames
+from .boss_lev3 import BossLev3, load_walk_frames_boss, load_attack_frames_boss
 from Game.obstacles import Obstacles
 from Game.puddle import load_frames_puddle, LavaPuddle
 from Game.timer import Timer
@@ -19,11 +19,11 @@ from Game.upgrades import Upgrades
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 BASE_LEVEL_SIZE = settings.RESOLUTIONS["HD"]
-BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo5.png")
+BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo6.png")
 
 
 # Allowed area where the player/enemies can move | NOTE: This will be different depending on the level (corner boxes differ between background imgs)
-LEVEL_2_AREA_CONFIG = {
+LEVEL_3_AREA_CONFIG = {
     # Area for the player/enemies to move (big square)
     "walkable_area": [96, 170, 1095, 430],
 
@@ -34,10 +34,10 @@ LEVEL_2_AREA_CONFIG = {
         [0, 20, 150, 80],
 
         # Upper middle object (LEFT)
-        [260, 10, 120, 30],
+        #[260, 10, 120, 30],
 
         # Upper middle object (RIGHT)
-        [700, 10, 120, 30],
+        #[700, 10, 120, 30],
 
         # Top right corner
         [930, 10, 150, 90],
@@ -104,11 +104,11 @@ def scale_level_rect(rect_values):
 def rebuild_level_area():
     global LEVEL_AREA
 
-    LEVEL_AREA = scale_level_rect(LEVEL_2_AREA_CONFIG["walkable_area"])
+    LEVEL_AREA = scale_level_rect(LEVEL_3_AREA_CONFIG["walkable_area"])
 
 def build_corner_object_rects():
     rects = []
-    for offset_x, offset_y, width, height in LEVEL_2_AREA_CONFIG["corner_objects"]:
+    for offset_x, offset_y, width, height in LEVEL_3_AREA_CONFIG["corner_objects"]:
         scaled_rect = scale_level_rect((offset_x, offset_y, width, height))
         rects.append(
             pygame.Rect(
@@ -155,7 +155,7 @@ def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, player_rec
         if any(candidate_rect.colliderect(enemy.rect.inflate(padding * 2, padding * 2)) for enemy in spawned_enemies):
             continue
 
-        spawned_enemies.append(SecEnemyLev2(spawn_pos, walk_frames))
+        spawned_enemies.append(SecEnemyLev3(spawn_pos, walk_frames))
 
     return spawned_enemies
 
@@ -187,7 +187,7 @@ def spawn_boss(area_rect, obstacles, walk_frames_boss, attack_frames_boss, playe
         if any(candidate_rect.colliderect(blocker) for blocker in blockers):
             continue
 
-        return BossLev2(spawn_pos, walk_frames_boss, attack_frames_boss)
+        return BossLev3(spawn_pos, walk_frames_boss, attack_frames_boss)
 
     return None
 
@@ -243,7 +243,7 @@ def rebuild_layout():
 
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
-    """Call once when entering Level 2."""
+    """Call once when entering Level 3."""
     global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss
 
     rebuild_level_area()
