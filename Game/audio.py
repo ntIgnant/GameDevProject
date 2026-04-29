@@ -1,7 +1,7 @@
 import os # for mp3 files lookup
 import pygame
 
-# Base dirs for Sound FX and Music (Music to be implemented)
+# Base dirs for Sound FX and Music
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SOUND_FX_DIR = os.path.join(BASE_DIR, "Assets", "Audio", "Sound_FX") # Directory where the Sound FX are located
 MUSIC_DIR = os.path.join(BASE_DIR, "Assets", "Audio", "Music") # Directory where the Music Is located
@@ -9,7 +9,29 @@ MUSIC_DIR = os.path.join(BASE_DIR, "Assets", "Audio", "Music") # Directory where
 # Audio related settings
 _mixer_ready = False
 _sounds = {}
-_default_volume = 0.7
+_music_volume = 0.45
+_current_music = None
+
+# default volume levels for each sfx
+SOUND_VOLUMES = {
+    "alien_hit": 0.30,
+    "boss_damage": 0.35,
+    "boss_roar": 0.45,
+    "button_click": 0.45,
+    "dash": 0.35,
+    "freeze": 0.40,
+    "game_over": 0.70,
+    "gun_shot": 0.30,
+    "item_pickup": 0.35,
+    "player_hit": 0.30,
+    "success": 0.45,
+}
+ # default volum levels for music
+MUSIC_VOLUMES = {
+    "main-menu-sound.mp3": 0.60,
+    "in-game.mp3": 0.45,
+    "boss-intro.mp3": 0.80,
+}
 
 
 def _get_mixer():
@@ -48,7 +70,7 @@ def is_ready():
     return _mixer_ready and mixer is not None and mixer.get_init() is not None
 
 
-def register_sound(name, filename, volume=None):
+def _register_sound(name, filename, volume):
     if not init_audio():
         return None
 
@@ -61,43 +83,101 @@ def register_sound(name, filename, volume=None):
         sound = mixer.Sound(path)
     except (pygame.error, FileNotFoundError, NotImplementedError):
         return None
-    sound.set_volume(_default_volume if volume is None else volume)
+    sound.set_volume(volume)
     _sounds[name] = sound
     return sound
 
 
-def load_sound(name, filename, volume=None):
-    return register_sound(name, filename, volume)
-
-
-def get_sound(name):
-    return _sounds.get(name)
-
-
 def play_sound(name):
-    sound = get_sound(name)
+    sound = _sounds.get(name)
     if sound is None:
         return None
     return sound.play()
 
 
-def load_game_sfx():
-    load_sound("alien_hit", "alien-being-hit.mp3", volume=0.55)
-    load_sound("game_over", "game-over.mp3", volume=0.7)
-    load_sound("gun_shot", "gun-shot.mp3", volume=0.45)
-    load_sound("player_hit", "player-being-damaged.mp3", volume=0.6)
+def _resolve_audio_path(filename):
+    sound_fx_path = os.path.join(SOUND_FX_DIR, filename)
+    if os.path.exists(sound_fx_path):
+        return sound_fx_path
+    music_path = os.path.join(MUSIC_DIR, filename)
+    if os.path.exists(music_path):
+        return music_path
+    return sound_fx_path
 
 
-def set_default_volume(volume):
-    global _default_volume
-    _default_volume = max(0.0, min(1.0, volume))
+def _get_music_volume(filename, volume):
+    if volume is not None:
+        return max(0.0, min(1.0, volume))
+    return MUSIC_VOLUMES.get(filename, _music_volume)
 
 
-def set_sound_volume(name, volume):
-    sound = get_sound(name)
-    if sound is None:
+def play_music(filename, loops=-1, volume=None):
+    global _current_music
+
+    if not init_audio():
+        return False
+
+    mixer = _get_mixer()
+    if mixer is None:
+        return False
+
+    music_path = _resolve_audio_path(filename)
+
+    try:
+        if _current_music != music_path:
+            mixer.music.load(music_path)
+            _current_music = music_path
+        mixer.music.set_volume(_get_music_volume(filename, volume))
+        mixer.music.play(loops)
+        return True
+    except (pygame.error, FileNotFoundError, NotImplementedError):
+        _current_music = None
+        return False
+
+
+def stop_music():
+    global _current_music
+
+    if not is_ready():
         return
-    sound.set_volume(max(0.0, min(1.0, volume)))
+
+    mixer = _get_mixer()
+    if mixer is None:
+        return
+
+    mixer.music.stop()
+    _current_music = None
+
+
+def ensure_music(filename, loops=-1, volume=None):
+    music_path = _resolve_audio_path(filename)
+    if _current_music == music_path and is_music_playing():
+        return True
+    return play_music(filename, loops=loops, volume=volume)
+
+
+def is_music_playing():
+    if not is_ready():
+        return False
+
+    mixer = _get_mixer()
+    if mixer is None:
+        return False
+
+    return mixer.music.get_busy()
+
+
+# load the actual mp3s and set each with the volumes of SOUND VOLUMES and MUSIC VOLUMES configs (start of the file)
+def load_game_sfx():
+    _register_sound("alien_hit", "alien-being-hit.mp3", SOUND_VOLUMES["alien_hit"])
+    _register_sound("button_click", "click-buttons.mp3", SOUND_VOLUMES["button_click"])
+    _register_sound("dash", "dash.mp3", SOUND_VOLUMES["dash"])
+    _register_sound("freeze", "freeze.mp3", SOUND_VOLUMES["freeze"])
+    _register_sound("game_over", "game-over.mp3", SOUND_VOLUMES["game_over"])
+    _register_sound("gun_shot", "gun-shot.mp3", SOUND_VOLUMES["gun_shot"])
+    _register_sound("item_pickup", "item-pickup.mp3", SOUND_VOLUMES["item_pickup"])
+    _register_sound("player_hit", "player-being-damaged.mp3", SOUND_VOLUMES["player_hit"])
+    _register_sound("success", "success.mp3", SOUND_VOLUMES["success"])
 
 
 def stop_all_sfx():

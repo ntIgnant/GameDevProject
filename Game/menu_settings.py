@@ -1,6 +1,7 @@
 import os
 import pygame
 import Game.settings as settings # Overall game settings (res, fps, ...)
+import Game.audio as audio # SFX
 from . import menu  # this import is to reuse functions created in menu.py file
 
 # Paths to background and other assets
@@ -94,11 +95,14 @@ def handle_event(event):
 
     if event.type == pygame.MOUSEBUTTONDOWN:
         if BACK_RECT.collidepoint(event.pos):
+            audio.play_sound("button_click") # play click sfx when button gets clicked
             return "back"
 
 
         # Handler for the Change of resolution in settings
         if RES_LEFT_RECT.collidepoint(event.pos) or RES_RIGHT_RECT.collidepoint(event.pos):
+            audio.play_sound("button_click") # play click sfx when button gets clicked
+            
             # Sswitch between availeable resolutions [HD, FHD] for now
             new_resolution = "FHD" if settings.CURRENT_RESOLUTION == "HD" else "HD"
             settings.set_resolution(new_resolution)

@@ -115,6 +115,7 @@ class Player:
             for upgrade in upgrades:
                 if self.rect.colliderect(upgrade.rect):
                     upgrade.random_upgrade(self)
+                    audio.play_sound("item_pickup") # play pickup sfx for item pickup
                     upgrades.remove(upgrade)
 
 
@@ -131,6 +132,7 @@ class Player:
             for upgrade in upgrades:
                 if self.rect.colliderect(upgrade.rect):
                     upgrade.random_upgrade(self)
+                    audio.play_sound("item_pickup") # play pickup sfx for item pickup
                     upgrades.remove(upgrade)
 
         self._clamp_to_area(area_rect)
@@ -166,6 +168,7 @@ class Player:
         if self.dash_direction.x != 0:
             self.facing_right = self.dash_direction.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
+        audio.play_sound("dash") # play dash sfx
 
     def _start_area_freeze(self):
         if self.area_freeze_cooldown_remaining > 0 or self.area_freeze_time_remaining > 0:
@@ -173,6 +176,7 @@ class Player:
 
         self.area_freeze_time_remaining = self.area_freeze_duration
         self.area_freeze_cooldown_remaining = self.area_freeze_cooldown
+        audio.play_sound("freeze") # play freeze sfx
 
     def is_area_freeze_active(self):
         return self.area_freeze_time_remaining > 0

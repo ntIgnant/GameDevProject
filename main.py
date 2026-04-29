@@ -35,14 +35,29 @@ running = True # boolean for the general game loop
 state = "menu" # this will vary depending on the state of the game [menu, menu_settings, level, etc]
 current_level = level_1
 
+
+def set_state(new_state):
+    global state
+
+    state = new_state
+
+    if new_state in ("menu", "menu_settings", "game_over"):
+        audio.ensure_music("main-menu-sound.mp3") # 'main menu music' sfx call
+
+    elif new_state == "level":
+        audio.ensure_music("in-game.mp3") # 'in game music' sfx call
+
 # Function to start level depending on the 'current last' level
 # It initializes with level 1
 def start_level(level_module):
-    global current_level, state
+    global current_level
 
     current_level = level_module
     current_level.start_level()
-    state = "level"
+    set_state("level")
+
+
+set_state(state)
 
 # Global loop of the Game
 while running:
@@ -81,7 +96,7 @@ while running:
                         start_level(level_1)
 
                 elif action == "settings":
-                    state = "menu_settings" # change state to menu_settings to display the settings menu
+                    set_state("menu_settings") # change state to menu_settings to display the settings menu
 
                 elif action == "exit":
                     running = False # Exit the while loop and terminate the game
@@ -91,7 +106,7 @@ while running:
             action = menu_settings.handle_event(event)
             # Case of 'back' button inside settings menu
             if action == "back":
-                state = "menu"
+                set_state("menu")
             
             # Case of 'switch resolution' in settings menu
             elif action == "switch_resolution":
@@ -117,16 +132,16 @@ while running:
                 if action == "retry":
                     start_level(current_level)
                 elif action == "menu":
-                    state = "menu"
+                    set_state("menu")
             
 
     level_action = None
     if state == "level":
         level_action = current_level.update_level(dt, keys, events)
         if level_action == "menu":
-            state = "menu"
+            set_state("menu")
         elif level_action == "game_over":
-            state = "game_over"
+            set_state("game_over")
 
         # Action to jump to the next level
         elif level_action == "level_complete":
@@ -156,4 +171,5 @@ while running:
     pygame.display.update()
 
 audio.stop_all_sfx()
+audio.stop_music()
 pygame.quit()
