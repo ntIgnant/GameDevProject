@@ -2,6 +2,7 @@ import os
 import pygame
 
 import Game.settings as settings
+import Game.audio as audio
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "pause_menu")
@@ -122,15 +123,20 @@ def ensure_ready():
 def pause_button_hit(pos):
     ensure_ready()
     #used by level_1.py detects clicks on the small pause button
-    return pause_rect.collidepoint(pos)
+    if pause_rect.collidepoint(pos):
+        audio.play_sound("button_click")
+        return True
+    return False
 
 
 def overlay_action(pos):
     ensure_ready()
     #used by level_1.py to decide which pause menu button was clicked
     if resume_rect.collidepoint(pos):
+        audio.play_sound("button_click")
         return "resume"
     if menu_rect.collidepoint(pos):
+        audio.play_sound("button_click")
         return "menu"
     return None
 

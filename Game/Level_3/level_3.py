@@ -71,6 +71,7 @@ debug_font = None
 CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
 is_paused = False
 resume_countdown = 0.0
+level_complete_delay_remaining = 0.0
 
 # This is the 'damange rate' of the enemy to the player
 # Lower = Faster damage
@@ -244,7 +245,7 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 3."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss, level_complete_delay_remaining
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
@@ -263,6 +264,7 @@ def start_level():
     )
     is_paused = False
     resume_countdown = 0.0
+    level_complete_delay_remaining = 0.0
     contact_damage_timer = 0.0
     timer.minutes = 2
     timer.seconds = 120
@@ -315,7 +317,7 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss
+    global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, level_complete_delay_remaining
 
     if not player:
         return
@@ -329,6 +331,12 @@ def update_level(dt, keys, events):
 
     if resume_countdown > 0:
         resume_countdown = max(0.0, resume_countdown - dt)
+        return None
+
+    if level_complete_delay_remaining > 0:
+        level_complete_delay_remaining = max(0.0, level_complete_delay_remaining - dt)
+        if level_complete_delay_remaining == 0.0:
+            return "level_complete"
         return None
     
     # The player's asset will be flipped based on the direction of the mouse
@@ -408,6 +416,8 @@ def update_level(dt, keys, events):
     # If all the secondary enemies are defeated, spawn the boss
     if ENABLE_BOSS and boss is None and not enemies:
         boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, player.rect)
+        if boss:
+            audio.play_music("boss-intro.mp3")
         
     if boss:
         boss.update(
@@ -466,8 +476,11 @@ def update_level(dt, keys, events):
         bullets = active_bullets
         
         if not boss.is_alive():
+            audio.play_sound("success")
+            audio.ensure_music("in-game.mp3")
             boss = None
-            return "level_complete"
+            level_complete_delay_remaining = 1.0
+            return None
         
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
@@ -478,7 +491,7 @@ def update_level(dt, keys, events):
     # When the player health reaches 0 or when the time is up, "game_over" flag is returned
     # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator
     if player.health <= 0 or timer.seconds <= 0:
-        audio.play_sound("game_over")
+        audio.ensure_music("in-game.mp3")
         return "game_over"
 
 def draw_level(screen):

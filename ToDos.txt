@@ -1,13 +1,5 @@
 Missing SFX:
-	Ignacio ...
-
-	-Fire attack enemy lvl1
-	-Dash, Freeze
-	-Item pick-up
-	-Main Enemy show up
-
-	-Main Menu Music
-	-Door SFX
+	-Door SFX | Ignacio
 
 Animations:
 	-Sec-enemy attacking asset animation | sabrina
@@ -26,7 +18,6 @@ Logic:
 	-Make main-enemy lvl1 attack faster | Sava
 	-Fix items (power limit) | Sava
 	-lvl2 main enemy | Marcos
-	-lvl3 blueprint | Ignacio
 	-Top-area limit problem when player becomes small | Sava	
 
 

@@ -1,6 +1,7 @@
 import os
 import pygame
 import Game.settings as settings # Overall game settings (res, fps, ...)
+import Game.audio as audio
 
 
 # MENU ASSETS DIRECTORY
@@ -84,12 +85,16 @@ def draw_main_screen(screen):
 
 def menu_options_handler(pos):
     if START_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "continue" # This label may change depending on the list LEVELS_COMPLETED in settings.py
     if NEW_GAME_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "new_game"
     if SETTINGS_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "settings"
     if EXIT_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "exit"
 
     return None
