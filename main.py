@@ -5,6 +5,8 @@ import Game.settings as settings # Config file of the game (e.g resolution, fps,
 import Game.menu as menu # Menu logic
 import Game.menu_settings as menu_settings # settings menu logic
 import Game.Level_1.level_1 as level_1 # Level 1 logic
+import Game.Level_2.level_2 as level_2 # Level 2 logic
+import Game.Level_3.level_3 as level_3 # Level 3 logic
 import Game.pause_menu as pause_menu
 import Game.game_over as game_over
 import Game.audio as audio
@@ -26,9 +28,21 @@ pygame.display.set_caption("Game name")
 clock = pygame.time.Clock()
 
 level_1.load_assets()
+level_2.load_assets()
+level_3.load_assets()
 
 running = True # boolean for the general game loop
 state = "menu" # this will vary depending on the state of the game [menu, menu_settings, level, etc]
+current_level = level_1
+
+# Function to start level depending on the 'current last' level
+# It initializes with level 1
+def start_level(level_module):
+    global current_level, state
+
+    current_level = level_module
+    current_level.start_level()
+    state = "level"
 
 # Global loop of the Game
 while running:
@@ -47,13 +61,10 @@ while running:
                 # Case when the 'new game' button is pressed | start from level 1
                 if action == "new_game":
                     settings.LEVELS_COMPLETED.clear() # Clear all the completed levels to start a new game
-                    state = "level"
-                    level_1.start_level()
+                    start_level(level_1)
                 
                 # Case when the 'continue / start' button is pressed | start the game from the last level that was completed
                 elif action == "continue":
-                    state = "level"
-
                     if not settings.LEVELS_COMPLETED:
                         next_level = 1
                     else:
@@ -61,11 +72,13 @@ while running:
 
                     # Evalueate level execution based on next_level value
                     if next_level == 1:
-                        level_1.start_level()
-                    # TO BE IMPLEMENTED: NEXT LEVELS INITIALIZATION
-                    # Start level1 just for now...
+                        start_level(level_1)
+                    elif next_level == 2:
+                        start_level(level_2)
+                    elif next_level == 3:
+                        start_level(level_3)
                     else:
-                        level_1.start_level()
+                        start_level(level_1)
 
                 elif action == "settings":
                     state = "menu_settings" # change state to menu_settings to display the settings menu
@@ -92,6 +105,8 @@ while running:
                 pause_menu.rebuild_layout()
                 game_over.rebuild_layout()
                 level_1.rebuild_layout()
+                level_2.rebuild_layout()
+                level_3.rebuild_layout()
         
         # Case where 'game_over' flag is returned
         # This triggers the game over screen to the user
@@ -100,19 +115,32 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 action = game_over.overlay_action(event.pos)
                 if action == "retry":
-                    level_1.start_level()
-                    state = "level"
+                    start_level(current_level)
                 elif action == "menu":
                     state = "menu"
             
 
     level_action = None
     if state == "level":
-        level_action = level_1.update_level(dt, keys, events)
+        level_action = current_level.update_level(dt, keys, events)
         if level_action == "menu":
             state = "menu"
         elif level_action == "game_over":
             state = "game_over"
+
+        # Action to jump to the next level
+        elif level_action == "level_complete":
+
+            # The following, checks for the current level, and 'jumps' to its next
+            # Also, verifies the list LEVELS_COMPLETED to save the progress for next time (Stat, vs New Game)
+            if current_level is level_1:
+                if 1 not in settings.LEVELS_COMPLETED:
+                    settings.LEVELS_COMPLETED.append(1)
+                start_level(level_2)
+            elif current_level is level_2:
+                if 2 not in settings.LEVELS_COMPLETED:
+                    settings.LEVELS_COMPLETED.append(2)
+                start_level(level_3)
 
     # draw current state
     if state == "menu":
@@ -121,7 +149,7 @@ while running:
         # screen.fill((10, 15, 30)) # placeholder for now | here should be the draw of the settings menu
         menu_settings.draw(screen)
     elif state == "level":
-        level_1.draw_level(screen)
+        current_level.draw_level(screen)
     elif state == "game_over":
         game_over.draw_overlay(screen)
 

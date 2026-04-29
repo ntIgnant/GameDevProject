@@ -1,21 +1,33 @@
------ Missing Requirements -----
+Missing SFX:
+	Ignacio ...
 
-- F11 final boss after waves: missing.
-- F4 / F4.1 / F4.2 multi-room progression and difficulty scaling: mostly missing. settings.TOTAL_LEVELS = 4 exists, but only level 1 is real.
-- F12 game ending after last boss: missing.
-- F13, F6, F6.1 item drops, pickups, trading, gameplay effects: missing.
-- F3, F3.1, F3.2 multiple enemy types with different speed/damage/health: missing.
-- F5, F5.1, F5.2 audio feedback: missing. (Music and Sound FX)
-- F15, F15.1 intro cutscene + skip: missing.
-- F2.2 aim follows mouse: only partially true. Shooting direction uses mouse, but the player sprite does not visibly aim toward the cursor.
-- F2.4 special attacks on Q and E: missing. Right now dash is on C, not Q or E.
-- F14.3 obstacles block attacks: missing. Bullets currently ignore obstacles.
-- F8 random enemy spawn not on top of player: missing. Enemy spawn is hardcoded.
-- F14 objects not directly on top of player: missing. Obstacle spawn does not check player overlap.
-- F16.1 pause menu should allow continue or restart: partially missing. It has resume and menu, but no restart button.
-- F1.3, F1.5, F1.6 current room, equipped weapon/skill, collected items: missing.
+	-Fire attack enemy lvl1
+	-Dash, Freeze
+	-Item pick-up
+	-Main Enemy show up
 
-- multiple sec-enemies (clones of the green one)
-- 'boost items' creation and logic
-- Another skill for the player (like the dash)
+	-Main Menu Music
+	-Door SFX
+
+Animations:
+	-Sec-enemy attacking asset animation | sabrina
+	-Initial cinematics | Igacio
+	-Door animation (asset with x-axis movement when the lvl finishes) | Marcos
+
+Menu:
+	-Mute Button | Ignacio
+	-Replace 'settings' with tutorial button | Ignacio
+
+Logic:
+	-Fix lvl1 main-enemy (a lot of bugs) | Sabrina
+	-Make Freeze slower | Sava
+	-Time between bullets | Sava
+	-Make sec-enemies faster and do more damage | Sava
+	-Make main-enemy lvl1 attack faster | Sava
+	-Fix items (power limit) | Sava
+	-lvl2 main enemy | Marcos
+	-lvl3 blueprint | Ignacio
+	-Top-area limit problem when player becomes small | Sava	
+
+
 
