@@ -71,7 +71,6 @@ debug_font = None
 CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
 is_paused = False
 resume_countdown = 0.0
-level_complete_delay_remaining = 0.0
 
 # This is the 'damange rate' of the enemy to the player
 # Lower = Faster damage
@@ -245,7 +244,7 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 3."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss, level_complete_delay_remaining
+    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
@@ -264,7 +263,6 @@ def start_level():
     )
     is_paused = False
     resume_countdown = 0.0
-    level_complete_delay_remaining = 0.0
     contact_damage_timer = 0.0
     timer.minutes = 2
     timer.seconds = 120
@@ -317,7 +315,7 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, level_complete_delay_remaining
+    global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss
 
     if not player:
         return
@@ -333,12 +331,6 @@ def update_level(dt, keys, events):
         resume_countdown = max(0.0, resume_countdown - dt)
         return None
 
-    if level_complete_delay_remaining > 0:
-        level_complete_delay_remaining = max(0.0, level_complete_delay_remaining - dt)
-        if level_complete_delay_remaining == 0.0:
-            return "level_complete"
-        return None
-    
     # The player's asset will be flipped based on the direction of the mouse
     # So, the player always faces the correct direction when shooting
     if player:
@@ -479,8 +471,7 @@ def update_level(dt, keys, events):
             audio.play_sound("success")
             audio.ensure_music("in-game.mp3")
             boss = None
-            level_complete_delay_remaining = 1.0
-            return None
+            return "level_complete"
         
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
