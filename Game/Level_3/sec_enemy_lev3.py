@@ -45,7 +45,7 @@ def load_walk_frames():
 class SecEnemyLev3:
     def __init__(self, pos, walk_frames):
         self.pos = pygame.Vector2(pos)
-        self.speed = 160
+        self.speed = 210
         self.size = 30
         self.rect = pygame.Rect(self.pos.x - self.size // 2, self.pos.y - self.size // 2, self.size, self.size)
 

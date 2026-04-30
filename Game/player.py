@@ -17,6 +17,7 @@ class Player:
         self.rect = pygame.Rect(0, 0, self.size, self.size)
         self.rect.center = (spawn_x, spawn_y)
         self.speed = 300
+        self.speed_boost_end = 0
         #health(we can connect it to damage later)
         self.max_health = 100
         self.health = 100
@@ -38,7 +39,7 @@ class Player:
         self.area_freeze_time_remaining = 0.0
         self.area_freeze_cooldown = 60.0
         self.area_freeze_cooldown_remaining = 0.0
-        self.area_freeze_slow_multiplier = 0.5
+        self.area_freeze_slow_multiplier = 0.1
         self.area_freeze_requested = False
         self.area_freeze_key_was_down = False
 
@@ -194,6 +195,12 @@ class Player:
             self.area_freeze_cooldown_remaining = max(0, self.area_freeze_cooldown_remaining - dt)
         if self.area_freeze_time_remaining > 0:
             self.area_freeze_time_remaining = max(0, self.area_freeze_time_remaining - dt)
+
+        #Timer for the speed boost
+        current_time = pygame.time.get_ticks()
+        if self.speed_boost_end > 0 and current_time >= self.speed_boost_end:
+            self.speed = 300
+            self.speed_boost_end = 0
 
         # E triggers dash once only even if held down
         dash_key_down = bool(keys[pygame.K_e])
