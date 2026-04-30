@@ -71,7 +71,7 @@ class BossLev1:
         # The boss will attack every few seconds (4 in this case)
         self.state = "idle"
         self.last_attack = 0.0 # keeps track of the time that passed since the last attack
-        self.attack_interval = 4.0
+        self.attack_interval = 2.0
         
         
         self.chasing = 3.0 # for how long the boss follows the player

@@ -24,13 +24,13 @@ class Upgrades:
         number = random.randint(1, 3)
         center = player.rect.center
 
-        if number == 1:
-            player.size -= 20
+        if number == 1 and player.size > 44:
+            player.size -= 10
         elif number == 2:   
-            player.max_health += 20
             player.health += 20
         elif number == 3:
             player.speed += 200
+            player.speed_boost_end = pygame.time.get_ticks() + 5000
 
         player.rect.size = (player.size, player.size)
         player.rect.center = center

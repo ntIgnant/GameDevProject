@@ -68,11 +68,15 @@ debug_font = None
 CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to bisualize the restricted areas of the level
 is_paused = False
 resume_countdown = 0.0
+fire_rate = 5
+fire_timer = 0
+shoot_cooldown = 1 / fire_rate
+
 
 # This is the 'damange rate' of the enemy to the player
 # Lower = Faster damage
-contact_damage_cooldown = 0.02
-contact_damage_timer = 0.0
+contact_damage_cooldown = 1.02
+contact_damage_timer = 1.0
 
 # 'damage rate' of one player's bullet. Used to damange enemy
 # Higher number -> more damange
@@ -315,7 +319,9 @@ def handle_level_event(event):
 
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
-    global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss
+    global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, fire_timer
+
+    fire_timer -= dt
 
     if not player:
         return
@@ -341,17 +347,20 @@ def update_level(dt, keys, events):
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
-            mouse_world = mouse_screen / camera.zoom + camera.offset
-            player_pos = pygame.Vector2(player.rect.center)
-            direction = mouse_world - player_pos
+            if fire_timer <= 0 :
+                mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
+                mouse_world = mouse_screen / camera.zoom + camera.offset
+                player_pos = pygame.Vector2(player.rect.center)
+                direction = mouse_world - player_pos
 
-            if direction.length_squared() > 0:
-                normalised_direction = direction.normalize()
-                bullets.append(
-                    GunProjectile(player.rect.centerx + normalised_direction.x * gun_offset,player.rect.centery + normalised_direction.y * gun_offset, normalised_direction)
-                )
-                audio.play_sound("gun_shot")
+                if direction.length_squared() > 0:
+                    normalised_direction = direction.normalize()
+                    bullets.append(
+                        GunProjectile(player.rect.centerx + normalised_direction.x * gun_offset,player.rect.centery + normalised_direction.y * gun_offset, normalised_direction)
+                    )
+                    audio.play_sound("gun_shot")
+
+                    fire_timer = shoot_cooldown
 
     # Logic for bullet collision with sec-enemy (based on restricted areas)
     # If the bullet overlaps a restricted area 'e.g enemy area/off map ', then they disapear
@@ -383,6 +392,8 @@ def update_level(dt, keys, events):
     timer.update(events)
     player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
     camera.update(player)
+
+
     # Pull one multiplier from the player so freeze can slow every enemy here
     enemy_speed_multiplier = player.get_enemy_speed_multiplier()
 
@@ -476,7 +487,7 @@ def update_level(dt, keys, events):
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
     if enemy_touching_player and contact_damage_timer <= 0:
-        player.take_damage(1)
+        player.take_damage(10)
         contact_damage_timer = contact_damage_cooldown
 
     # When the player health reaches 0 or when the time is up, "game_over" flag is returned
