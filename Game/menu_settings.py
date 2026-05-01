@@ -2,15 +2,16 @@ import os
 import pygame
 import Game.settings as settings # Overall game settings (res, fps, ...)
 import Game.audio as audio # SFX
-from . import menu  # this import is to reuse functions created in menu.py file
 
 # Paths to background and other assets
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Menu")
+BG_PATH = os.path.join(ASSETS_DIR, "BG.png") # Different background image for the menu_settings
 BACK_BTN_PATH = os.path.join(ASSETS_DIR, "Backward_BTN.png")
 
 # Aspect ration and size of the 'back' button
 BACK_RECT = pygame.Rect(20, 20, 80, 80) # Button placement on screen (now top left)
+background_img = None
 back_btn_img = None
 
 # Rectangles for the audio settings
@@ -34,7 +35,10 @@ MUTE_ALL_RECT = pygame.Rect(0, 0, 160, 54) # on/off Mute Master
 
 # Loads the assets used for the menu, and aplies scalation for some (mainly for the buttons)
 def load_settings_assets():
-    global back_btn_img
+    global background_img, back_btn_img
+
+    background_img = pygame.image.load(BG_PATH).convert()
+    background_img = pygame.transform.smoothscale(background_img, (settings.WIDTH, settings.HEIGHT))
 
     back_btn_img = pygame.image.load(BACK_BTN_PATH).convert_alpha()
     back_btn_img = pygame.transform.smoothscale(back_btn_img,(BACK_RECT.width, BACK_RECT.height))
@@ -43,13 +47,12 @@ def load_settings_assets():
 # This function draws the whole UI for the settings menu
 # Placements for all the used assets, background, buttons, etc
 def draw(screen):
-    global back_btn_img
+    global background_img, back_btn_img
 
-    # Background img (same as menu)
-    if menu.background_img is None:
-        menu.load_menu_assets()
+    if background_img is None:
+        load_settings_assets()
 
-    screen.blit(menu.background_img, (0, 0))
+    screen.blit(background_img, (0, 0))
 
     if back_btn_img is None:
         load_settings_assets()
@@ -234,7 +237,7 @@ def handle_event(event):
 
 # Function to re-scale the settings menu layout
 def rebuild_layout():
-    global BACK_RECT, back_btn_img
+    global BACK_RECT, background_img, back_btn_img
     global MUSIC_LABEL_POS, MUSIC_VALUE_RECT, MUSIC_LEFT_RECT, MUSIC_RIGHT_RECT
     global SFX_LABEL_POS, SFX_VALUE_RECT, SFX_LEFT_RECT, SFX_RIGHT_RECT
     global MUTE_MUSIC_LABEL_POS, MUTE_MUSIC_RECT, MUTE_SFX_LABEL_POS, MUTE_SFX_RECT, MUTE_ALL_LABEL_POS, MUTE_ALL_RECT
@@ -283,4 +286,5 @@ def rebuild_layout():
     MUTE_ALL_RECT.center = (toggle_x, mute_all_y)
 
     # Reload globals to be loaded with the 'correct' no scaled sizes
+    background_img = None
     back_btn_img = None
