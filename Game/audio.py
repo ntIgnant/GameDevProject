@@ -128,6 +128,12 @@ def _resolve_audio_path(filename):
     if os.path.exists(music_path):
         return music_path
     return sound_fx_path
+def load_game_sfx():
+    load_sound("alien_hit", "alien-being-hit.mp3", volume=0.55)
+    load_sound("boss_damage", "boss-damage.mp3", volume=0.6)
+    load_sound("game_over", "game-over.mp3", volume=0.7)
+    load_sound("gun_shot", "gun-shot.mp3", volume=0.45)
+    load_sound("player_hit", "player-being-damaged.mp3", volume=0.6)
 
 
 def _get_music_base_volume(filename, volume):
