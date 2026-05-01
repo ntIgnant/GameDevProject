@@ -148,9 +148,8 @@ class BossLev2:
                     self.state = "idle"
                     self.state_counter = 0.0
             self.display_health += (self.health - self.display_health) * 5.0 * dt
-            return
-        
-        self.state_counter += dt
+        else:
+            self.state_counter += dt
         
         # If statements to make the boss switch between its states
         # The idle and chase statements make the boss not track the player countinously

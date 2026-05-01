@@ -393,7 +393,14 @@ def update_level(dt, keys, events):
     bullets = active_bullets
 
     timer.update(events)
-    player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
+    
+    # Add the boss to the list of blockers so the player cannot push it
+    enemy_rects = [enemy.rect for enemy in enemies]
+    if boss is not None:
+        # Make the rect of the boss smaller
+        enemy_rects.append(boss.rect.inflate(-60,-30))
+    
+    player.update(dt, keys, obstacle, upgrades_spawn, enemy_rects, LEVEL_AREA)
     camera.update(player)
     # Pull one multiplier from the player so freeze can slow every enemy here
     enemy_speed_multiplier = player.get_enemy_speed_multiplier()

@@ -34,7 +34,7 @@ def load_spritesheet(path, frame_width, frame_height):
 
 def load_walk_frames():
     """Call after pygame display is initialized."""
-    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy3_walk.png")
+    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy4_walk.png")
     frames = load_spritesheet(walk_path, ENEMY_FRAME_W, ENEMY_FRAME_H)
     return [
         pygame.transform.scale(f, (ENEMY_FRAME_W * SCALE, ENEMY_FRAME_H * SCALE))
@@ -43,7 +43,7 @@ def load_walk_frames():
 
 def load_attack_frames():
     """Call after pygame display is initialized."""
-    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy3_attack.png")
+    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy4_attack.png")
     frames = load_spritesheet(walk_path, ENEMY_FRAME_W, ENEMY_FRAME_H)
     return [
         pygame.transform.scale(f, (ENEMY_FRAME_W * SCALE, ENEMY_FRAME_H * SCALE))
