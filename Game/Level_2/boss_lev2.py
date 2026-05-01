@@ -315,6 +315,7 @@ class BossLev2:
                 self.frame_index = 0.0
 
             self.display_health += (self.health - self.display_health) * 5.0 * dt
+            return
         else:
             self.state_counter += dt
         
