@@ -445,6 +445,7 @@ def update_level(dt, keys, events):
 
     # When the boss exists, the camera zooms out slightly for better visibility
     camera.base_zoom = boss_camera_base_zoom() if boss else NORMAL_CAMERA_ZOOM
+    camera.update(player)
     # Pull one multiplier from the player so freeze can slow every enemy here
     enemy_speed_multiplier = player.get_enemy_speed_multiplier()
 
@@ -468,13 +469,10 @@ def update_level(dt, keys, events):
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
     
     # If all the secondary enemies are defeated, spawn the boss
-    if ENABLE_BOSS and boss is None and not enemies:
-        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, player.rect)
+    if ENABLE_BOSS and boss is None and not enemies and not boss_defeated:
+        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss, player.rect)
         if boss:
             audio.play_music("boss-intro.mp3")
-    if ENABLE_BOSS and boss is None and not enemies and not boss_defeated:
-        # this creates the Level 2 boss after the smaller enemies are gone
-        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss, player.rect)
         
     if boss:
         # This updates the boss movement, attacks, phase changes, and warning animation timers
