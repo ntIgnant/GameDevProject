@@ -1,4 +1,4 @@
-# Logic for the 'Secondary Enemy' of the Level 2
+# Logic for the 'Secondary Enemy' of the Level 3
 import os
 import pygame
 from Game.camera import Camera
@@ -41,8 +41,8 @@ def load_walk_frames():
         for f in frames
     ]
 
-# Object of the Secondary Enemy of Level 2
-class SecEnemyLev2:
+# Object of the Secondary Enemy of Level 3
+class SecEnemyLev3:
     def __init__(self, pos, walk_frames):
         self.pos = pygame.Vector2(pos)
         self.speed = 210
@@ -85,13 +85,13 @@ class SecEnemyLev2:
         self.bar_fill = pygame.transform.scale_by(self.bar_fill, ui_scale)
 
     # This function updates the current health of the sec-enemy (fur bullet damage)
-    # the 'amount' parameter is a 'damage' value that can be modified in level_2.py (damage of the bullet)
+    # the 'amount' parameter is a 'damage' value that can be modified in level_3.py (damage of the bullet)
 
     def take_damage(self, amount):
         self.health = max(0, self.health - amount)
 
     # This function just checks if the health of the enemy is > 0
-    # This is ued in level_2.py to evaluate if enemy should still appear or not in the map
+    # This is ued in level_3.py to evaluate if enemy should still appear or not in the map
     def is_alive(self):
         return self.health > 0
 

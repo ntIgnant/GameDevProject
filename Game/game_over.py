@@ -1,6 +1,7 @@
 import pygame
 import os
 import Game.settings as settings # This is mainly for the resolution (HD, or FHD)
+import Game.audio as audio
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Game_over")
@@ -32,6 +33,7 @@ header_rect = pygame.Rect(0, 0, 0, 0)
 
 title_font = None
 screen_size = (0, 0)
+sound_played = False
 
 def load_assets():
     global window_raw, header_raw, replay_btn_raw, menu_btn_raw, background_raw
@@ -107,16 +109,26 @@ def ensure_ready():
 # This function handles the POST actions of the buttons
 # For now, retry and menu button logic
 def overlay_action(pos):
+    global sound_played
     ensure_ready()
     if retry_rect.collidepoint(pos):
+        sound_played = False
+        audio.play_sound("button_click")
         return "retry"
     if menu_rect.collidepoint(pos):
+        sound_played = False
+        audio.play_sound("button_click")
         return "menu"
     return None
 
 
 def draw_overlay(screen):
+    global sound_played
     ensure_ready()
+
+    if not sound_played:
+        audio.play_sound("game_over")
+        sound_played = True
 
     screen.blit(background_img, (0,0))
 

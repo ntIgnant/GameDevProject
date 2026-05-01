@@ -1,13 +1,12 @@
-# Logic for the 'Secondary Enemy' of the Level 2
-import os
 import pygame
+import os
 from Game.camera import Camera
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 
-ENEMY_FRAME_W = 32
-ENEMY_FRAME_H = 32
+BOSS_FRAME_W = 32
+BOSS_FRAME_H = 32
 SCALE = 2
 
 # HELPER FUNCTION FOR THE 'ANIMATION' FRAMES
@@ -29,38 +28,62 @@ def load_spritesheet(path, frame_width, frame_height):
                 break
             frames.append(sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height)))
 
-    return frames # Returns a list with the frames that form the movement animation of the enemy walking
+    return frames # Returns a list with the frames that form the movement animation of the boss walking
 
 
-def load_walk_frames():
+def load_walk_frames_boss():
     """Call after pygame display is initialized."""
-    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy2_walk.png")
-    frames = load_spritesheet(walk_path, ENEMY_FRAME_W, ENEMY_FRAME_H)
+    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "boss1_walk.png")
+    frames = load_spritesheet(walk_path, BOSS_FRAME_W, BOSS_FRAME_H)
     return [
-        pygame.transform.scale(f, (ENEMY_FRAME_W * SCALE, ENEMY_FRAME_H * SCALE))
+        pygame.transform.scale(f, (BOSS_FRAME_W * SCALE, BOSS_FRAME_H * SCALE))
         for f in frames
     ]
 
-# Object of the Secondary Enemy of Level 2
-class SecEnemyLev2:
-    def __init__(self, pos, walk_frames):
+def load_attack_frames_boss():
+    attack_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "boss1_attack.png")
+    frames = load_spritesheet(attack_path, BOSS_FRAME_W, BOSS_FRAME_H)
+    return [
+        pygame.transform.scale(f, (BOSS_FRAME_W * SCALE, BOSS_FRAME_H * SCALE))
+        for f in frames
+    ]
+
+# Obeject of the boss of level 3
+class BossLev3:
+    def __init__(self, pos, walk_frames, attack_frames):
         self.pos = pygame.Vector2(pos)
-        self.speed = 210
-        self.size = 30
+        self.speed = 90
+        self.size = 150
         self.rect = pygame.Rect(self.pos.x - self.size // 2, self.pos.y - self.size // 2, self.size, self.size)
-
-        # class attirbutes for the enemy health
-        self.max_health = 100
-        self.health = 100
-        self.display_health = 100.0
-
-        # Class attributes for the enemy position (to keep track)
+        
+        # Health attributes for the boss
+        self.max_health = 200
+        self.health = 200
+        self.display_health = 200.0
+ 
+        # Class attributes for the boss position while walking/attacking
         self.walk_frames = walk_frames
+        self.attack_frames = attack_frames
         self.frame_index = 0.0
         self.anim_fps = 10.0
-
-        self.facing_right = True # default asset 'is facing' direction
-
+        self.anim_fps_attack = 5.0
+        
+        # The boss will attack every few seconds (4 in this case)
+        self.state = "idle"
+        self.last_attack = 0.0 # keeps track of the time that passed since the last attack
+        self.attack_interval = 4.0
+        
+        
+        self.chasing = 3.0 # for how long the boss follows the player
+        self.idle = 2.0 # for how long the boss stays still
+        self.state_counter = 0.0 # keeps track for how long the boss was in one state
+        
+        # initialy, the assets is facing right
+        self.facing_right = True
+        
+        # queue used to handle the puddle spawn logic while the attack animations plays
+        self.puddle_queue = []
+        
         # Directory to access the sec-enemy health-bar (same as the player but purple)
         healthbar_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "Healthbar_sec_enemy.png")
         ui = pygame.image.load(healthbar_path).convert_alpha()
@@ -85,13 +108,13 @@ class SecEnemyLev2:
         self.bar_fill = pygame.transform.scale_by(self.bar_fill, ui_scale)
 
     # This function updates the current health of the sec-enemy (fur bullet damage)
-    # the 'amount' parameter is a 'damage' value that can be modified in level_2.py (damage of the bullet)
+    # the 'amount' parameter is a 'damage' value that can be modified in level_3.py (damage of the bullet)
 
     def take_damage(self, amount):
         self.health = max(0, self.health - amount)
 
     # This function just checks if the health of the enemy is > 0
-    # This is ued in level_2.py to evaluate if enemy should still appear or not in the map
+    # This is ued in level_3.py to evaluate if enemy should still appear or not in the map
     def is_alive(self):
         return self.health > 0
 
@@ -101,21 +124,56 @@ class SecEnemyLev2:
         self.rect.clamp_ip(area_rect)
         self.pos.update(self.rect.centerx, self.rect.centery)
 
-    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None, enemy_rects=None, speed_multiplier=1.0):
+    def update(self, dt, target_center, obstacles, player_rect=None, area_rect=None, speed_multiplier=1.0):
         to_target = pygame.Vector2(target_center) - self.pos
         dist = to_target.length()
         speed_scale = max(0.0, speed_multiplier)
+        
+        # Attack timer to keep track of the time since the last attack
+        self.last_attack += dt
+        
+        # Check if enough time passed since the last attack and perform the action if yes
+        if self.last_attack >= self.attack_interval and self.state != "attack":
+            self.state = "attack"
+            self.last_attack = 0.0 # Reset the timer
+            self.frame_index = 0.0
+            self.puddle_queue.append(pygame.Vector2(target_center)) # Spawn the lava puddle under the target
+            
+        # Animation for attack + changing the state once it's done
+        if self.state == "attack":
+            if self.attack_frames:
+                self.frame_index += self.anim_fps_attack * dt
+                if self.frame_index >= len(self.attack_frames):
+                    self.frame_index = 0.0
+                    self.state = "idle"
+                    self.state_counter = 0.0
+            self.display_health += (self.health - self.display_health) * 5.0 * dt
+            return
+        
+        self.state_counter += dt
+        
+        # If statements to make the boss switch between its states
+        # The idle and chase statements make the boss not track the player countinously
+        if self.state == "idle" and self.state_counter >= self.idle:
+            self.state = "chase"
+            self.state_counter = 0.0
+            self.frame_index = 0.0
+            
+        if self.state == "chase" and self.state_counter >= self.chasing:
+            self.state = "idle"
+            self.state_counter = 0.0
+            self.frame_index = 0.0
 
-        if dist > 2:
+        if dist > 2 and self.state == "chase":
             movement = to_target.normalize() * self.speed * speed_scale * dt
 
             # The asset of the enemy should face the same as the direction it is walking to
 
-            # set the asset to be facing at the right
+            # Set the asset to be facing at the right
             if movement.x < 0.01:
                 self.facing_right = True
 
-            # set the asset to be facing at the left
+            # Set the asset to be facing at the left
             elif movement.x > -0.01:
                 self.facing_right = False
 
@@ -141,18 +199,6 @@ class SecEnemyLev2:
                 elif movement.x < 0:
                     self.rect.left = player_rect.right
                 self.pos.x = self.rect.centerx
-
-            # Check for overlap area between sec-enemies
-            # Each sec-enemy has it's onw area, which is restricted for the other enemies and player
-            if enemy_rects:
-                for enemy_rect in enemy_rects:
-                    if self.rect.colliderect(enemy_rect):
-                        collision_x = True
-                        if movement.x > 0:
-                            self.rect.right = enemy_rect.left
-                        elif movement.x < 0:
-                            self.rect.left = enemy_rect.right
-                        self.pos.x = self.rect.centerx
 
             self._clamp_to_area(area_rect)
 
@@ -181,32 +227,19 @@ class SecEnemyLev2:
                 self.pos.y = self.rect.centery
 
 
-            # Check for overlap area between sec-enemies
-            # Each sec-enemy has it's onw area, which is restricted for the other enemies and player
-            if enemy_rects:
-                for enemy_rect in enemy_rects:
-                    if self.rect.colliderect(enemy_rect):
-                        collision_y = True
-                        if movement.y > 0:
-                            self.rect.bottom = enemy_rect.top
-                        elif movement.y < 0:
-                            self.rect.top = enemy_rect.bottom
-                        self.pos.y = self.rect.centery
-
             self._clamp_to_area(area_rect)
 
             if collision_x or collision_y:
                 movement = movement.rotate(45)
 
-            #animation
+            # Animation for walking/chasing
             if self.walk_frames:
                 self.frame_index += self.anim_fps * dt * speed_scale
                 if self.frame_index >= len(self.walk_frames):
                     self.frame_index = 0.0
 
         self.display_health += (self.health - self.display_health) * 5.0 * dt
-
-
+    
     # This functions puts the healthbar of the sec-enemy above this one
     # The following code is preatty much the same as the healthbar draw for the player
     def draw_health_ui(self, screen, camera):
@@ -257,12 +290,21 @@ class SecEnemyLev2:
             return
 
         self.draw_health_ui(screen, camera)
-        frame = self.walk_frames[int(self.frame_index)]
+        
+        if self.state == "attack":
+            frame = self.attack_frames[int(self.frame_index)]
+        else:
+            frame = self.walk_frames[int(self.frame_index)]    
+        
         if not self.facing_right:
             frame = pygame.transform.flip(frame, True, False)
-        rect = frame.get_rect(center=(int(self.pos.x), int(self.pos.y)))
+            
+        # Resize the boss assets accordingly to its size
+        scaled_boss = pygame.transform.scale(frame, (self.size, self.size))
+        
+        rect = scaled_boss.get_rect(center=(int(self.pos.x), int(self.pos.y)))
         rect = camera.apply(rect)
         
-        # zooming in and drawing the enemy
+        # zooming in and drawing the boss
         zoom = pygame.transform.scale(frame, rect.size)
         screen.blit(zoom, rect.topleft)

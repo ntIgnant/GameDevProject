@@ -17,6 +17,7 @@ class Player:
         self.rect = pygame.Rect(0, 0, self.size, self.size)
         self.rect.center = (spawn_x, spawn_y)
         self.speed = 300
+        self.speed_boost_end = 0
         #health(we can connect it to damage later)
         self.max_health = 100
         self.health = 100
@@ -38,7 +39,7 @@ class Player:
         self.area_freeze_time_remaining = 0.0
         self.area_freeze_cooldown = 60.0
         self.area_freeze_cooldown_remaining = 0.0
-        self.area_freeze_slow_multiplier = 0.5
+        self.area_freeze_slow_multiplier = 0.1
         self.area_freeze_requested = False
         self.area_freeze_key_was_down = False
 
@@ -115,6 +116,7 @@ class Player:
             for upgrade in upgrades:
                 if self.rect.colliderect(upgrade.rect):
                     upgrade.random_upgrade(self)
+                    audio.play_sound("item_pickup") # play pickup sfx for item pickup
                     upgrades.remove(upgrade)
 
 
@@ -131,6 +133,7 @@ class Player:
             for upgrade in upgrades:
                 if self.rect.colliderect(upgrade.rect):
                     upgrade.random_upgrade(self)
+                    audio.play_sound("item_pickup") # play pickup sfx for item pickup
                     upgrades.remove(upgrade)
 
         self._clamp_to_area(area_rect)
@@ -166,6 +169,7 @@ class Player:
         if self.dash_direction.x != 0:
             self.facing_right = self.dash_direction.x > 0
         self.dash_cooldown_remaining = self.dash_cooldown
+        audio.play_sound("dash") # play dash sfx
 
     def _start_area_freeze(self):
         if self.area_freeze_cooldown_remaining > 0 or self.area_freeze_time_remaining > 0:
@@ -173,6 +177,7 @@ class Player:
 
         self.area_freeze_time_remaining = self.area_freeze_duration
         self.area_freeze_cooldown_remaining = self.area_freeze_cooldown
+        audio.play_sound("freeze") # play freeze sfx
 
     def is_area_freeze_active(self):
         return self.area_freeze_time_remaining > 0
@@ -190,6 +195,12 @@ class Player:
             self.area_freeze_cooldown_remaining = max(0, self.area_freeze_cooldown_remaining - dt)
         if self.area_freeze_time_remaining > 0:
             self.area_freeze_time_remaining = max(0, self.area_freeze_time_remaining - dt)
+
+        #Timer for the speed boost
+        current_time = pygame.time.get_ticks()
+        if self.speed_boost_end > 0 and current_time >= self.speed_boost_end:
+            self.speed = 300
+            self.speed_boost_end = 0
 
         # E triggers dash once only even if held down
         dash_key_down = bool(keys[pygame.K_e])

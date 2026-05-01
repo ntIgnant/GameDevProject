@@ -1,13 +1,14 @@
 import os
 import pygame
 import Game.settings as settings # Overall game settings (res, fps, ...)
+import Game.audio as audio
 
 
 # MENU ASSETS DIRECTORY
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Menu")
 
-BG_PATH = os.path.join(ASSETS_DIR, "BG.png")
+BG_PATH = os.path.join(ASSETS_DIR, "BG_ver02.png") # updated to alien version
 START_BTN_PATH = os.path.join(ASSETS_DIR, "Start_BTN.png")
 NEW_GAME_BTN_PATH = os.path.join(ASSETS_DIR, "New_Game_BTN.png")
 SETTINGS_BTN_PATH = os.path.join(ASSETS_DIR, "Settings_BTN.png")
@@ -84,12 +85,16 @@ def draw_main_screen(screen):
 
 def menu_options_handler(pos):
     if START_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "continue" # This label may change depending on the list LEVELS_COMPLETED in settings.py
     if NEW_GAME_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "new_game"
     if SETTINGS_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "settings"
     if EXIT_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
         return "exit"
 
     return None
