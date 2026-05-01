@@ -6,7 +6,7 @@ import pygame
 import Game.settings as settings
 from Game.player import Player
 from Game.gun import GunProjectile
-from .sec_enemy_lev2 import SecEnemyLev2, load_walk_frames
+from .sec_enemy_lev2 import SecEnemyLev2, load_walk_frames, load_attack_frames
 from .boss_lev2 import BossLev2, load_walk_frames_boss, load_attack_frames_boss, load_fire_circle_frames_boss
 from Game.obstacles import Obstacles
 from Game.timer import Timer
@@ -64,6 +64,7 @@ bullets = []
 # It stores the bullets fired by the Level 2 boss
 boss_bullets = []
 walk_frames = []
+attack_frames = []
 walk_frames_boss = []
 attack_frames_boss = []
 
@@ -149,7 +150,7 @@ def boss_camera_base_zoom():
     return BOSS_CAMERA_ZOOM / resolution_scale
 
 # This function generates the seconary enemies in random possitions (avoiding restricted areas)
-def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, player_rect=None):
+def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, attack_frames, player_rect=None):
     spawned_enemies = []
     enemy_size = 30
     padding = 12 # This value adds a 'gap/padding' between the random place where the enemies are generated, for them not to be too close
@@ -183,7 +184,7 @@ def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, player_rec
         if any(candidate_rect.colliderect(enemy.rect.inflate(padding * 2, padding * 2)) for enemy in spawned_enemies):
             continue
 
-        spawned_enemies.append(SecEnemyLev2(spawn_pos, walk_frames))
+        spawned_enemies.append(SecEnemyLev2(spawn_pos, walk_frames, attack_frames))
 
     return spawned_enemies
 
@@ -241,12 +242,13 @@ def get_enemy_target_point(player_center, enemy_pos, enemy_index, enemy_count, r
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
     """Call after pygame display is initialized."""
-    global background, walk_frames, debug_font, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss
+    global background, walk_frames, attack_frames, debug_font, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss
 
     raw_background = pygame.image.load(BACKGROUND_PATH).convert()
     background = pygame.transform.smoothscale(raw_background, BASE_LEVEL_SIZE)
 
     walk_frames = load_walk_frames()
+    attack_frames = load_attack_frames()
     walk_frames_boss = load_walk_frames_boss()
     attack_frames_boss = load_attack_frames_boss()
 
@@ -296,6 +298,7 @@ def start_level():
         LEVEL_AREA,
         obstacle,
         walk_frames,
+        attack_frames,
         player.rect,
     )
 
@@ -431,11 +434,17 @@ def update_level(dt, keys, events):
     bullets = active_bullets
 
     timer.update(events)
-    player.update(dt, keys, obstacle, upgrades_spawn, [enemy.rect for enemy in enemies], LEVEL_AREA)
+    
+    # Add the boss to the list of blockers so the player cannot push it
+    enemy_rects = [enemy.rect for enemy in enemies]
+    if boss is not None:
+        # Make the rect of the boss smaller
+        enemy_rects.append(boss.rect.inflate(-60,-30))
+        
+    player.update(dt, keys, obstacle, upgrades_spawn, enemy_rects, LEVEL_AREA)
 
     # When the boss exists, the camera zooms out slightly for better visibility
     camera.base_zoom = boss_camera_base_zoom() if boss else NORMAL_CAMERA_ZOOM
-    camera.update(player)
     # Pull one multiplier from the player so freeze can slow every enemy here
     enemy_speed_multiplier = player.get_enemy_speed_multiplier()
 
@@ -515,6 +524,17 @@ def update_level(dt, keys, events):
     if enemy_touching_player and contact_damage_timer <= 0:
         player.take_damage(15)
         contact_damage_timer = contact_damage_cooldown
+
+    for enemy in enemies:
+        # If the player is close to the enemy, the state is switched and the enemy will attack 
+        if rects_touch_or_overlap(enemy.rect, player.rect):
+            current_state = "attack"
+        else:
+            current_state = "walk"
+            
+        if current_state != enemy.state:
+            enemy.state = current_state
+            enemy.frame_index = 0.0
 
     # When the player health reaches 0 or when the time is up, "game_over" flag is returned
     # This would trigger the 'Game Over Screen' in the main.py which works as the orchestrator

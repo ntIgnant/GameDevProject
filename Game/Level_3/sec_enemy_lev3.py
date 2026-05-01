@@ -34,16 +34,26 @@ def load_spritesheet(path, frame_width, frame_height):
 
 def load_walk_frames():
     """Call after pygame display is initialized."""
-    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy2_walk.png")
+    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy4_walk.png")
     frames = load_spritesheet(walk_path, ENEMY_FRAME_W, ENEMY_FRAME_H)
     return [
         pygame.transform.scale(f, (ENEMY_FRAME_W * SCALE, ENEMY_FRAME_H * SCALE))
         for f in frames
     ]
 
+def load_attack_frames():
+    """Call after pygame display is initialized."""
+    walk_path = os.path.join(ASSETS_DIR, "Characters", "Enemy", "enemy4_attack.png")
+    frames = load_spritesheet(walk_path, ENEMY_FRAME_W, ENEMY_FRAME_H)
+    return [
+        pygame.transform.scale(f, (ENEMY_FRAME_W * SCALE, ENEMY_FRAME_H * SCALE))
+        for f in frames
+    ]
+
+
 # Object of the Secondary Enemy of Level 3
 class SecEnemyLev3:
-    def __init__(self, pos, walk_frames):
+    def __init__(self, pos, walk_frames, attack_frames):
         self.pos = pygame.Vector2(pos)
         self.speed = 210
         self.size = 30
@@ -56,8 +66,11 @@ class SecEnemyLev3:
 
         # Class attributes for the enemy position (to keep track)
         self.walk_frames = walk_frames
+        self.attack_frames = attack_frames
         self.frame_index = 0.0
         self.anim_fps = 10.0
+
+        self.state = "walk"
 
         self.facing_right = True # default asset 'is facing' direction
 
@@ -198,10 +211,15 @@ class SecEnemyLev3:
             if collision_x or collision_y:
                 movement = movement.rotate(45)
 
-            #animation
-            if self.walk_frames:
+            if self.state == "walk":
+                current_animation = self.walk_frames
+            else:
+                current_animation = self.attack_frames
+
+            #animation based on current state
+            if current_animation:
                 self.frame_index += self.anim_fps * dt * speed_scale
-                if self.frame_index >= len(self.walk_frames):
+                if self.frame_index >= len(current_animation):
                     self.frame_index = 0.0
 
         self.display_health += (self.health - self.display_health) * 5.0 * dt
@@ -253,11 +271,16 @@ class SecEnemyLev3:
 
 
     def draw(self, screen, camera):
-        if not self.walk_frames:
+        if self.state == "walk":
+            current_animation = self.walk_frames
+        else:
+            current_animation = self.attack_frames
+            
+        if not current_animation:
             return
 
         self.draw_health_ui(screen, camera)
-        frame = self.walk_frames[int(self.frame_index)]
+        frame = current_animation[int(self.frame_index)]
         if not self.facing_right:
             frame = pygame.transform.flip(frame, True, False)
         rect = frame.get_rect(center=(int(self.pos.x), int(self.pos.y)))
