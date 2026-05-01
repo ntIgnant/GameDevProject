@@ -9,8 +9,13 @@ MUSIC_DIR = os.path.join(BASE_DIR, "Assets", "Audio", "Music") # Directory where
 # Audio related settings
 _mixer_ready = False
 _sounds = {}
-_music_volume = 0.45
+music_volume = 1.0
+sfx_volume = 1.0
+music_muted = False
+sfx_muted = False
+master_muted = False
 _current_music = None
+_current_music_base_volume = None
 
 # default volume levels for each sfx
 SOUND_VOLUMES = {
@@ -33,7 +38,7 @@ MUSIC_VOLUMES = {
     "boss-intro.mp3": 0.80,
 }
 
-
+# Handles pygame mixer safely, fallback to avoid crash if audio doesn't work
 def _get_mixer():
     try:
         mixer = pygame.mixer
@@ -64,18 +69,35 @@ def init_audio():
 
     return _mixer_ready
 
-
+# helper function to work with init audio
 def is_ready():
     mixer = _get_mixer()
     return _mixer_ready and mixer is not None and mixer.get_init() is not None
 
+# Based on the user actions on menu_settings.py (volume menu) the function handles
+# the volume values and mute/unmute music/sfx
+def apply_audio_settings():
+    mixer = _get_mixer()
+    music_base = _current_music_base_volume if _current_music_base_volume is not None else 1.0
+    music_actual = 0.0 if master_muted or music_muted else music_base * music_volume
+    sfx_actual = 0.0 if master_muted or sfx_muted else sfx_volume
 
+    if is_ready() and mixer is not None:
+        mixer.music.set_volume(music_actual)
+
+    for name, sound in _sounds.items():
+        sound.set_volume(SOUND_VOLUMES.get(name, 1.0) * sfx_actual)
+
+# Loads SFX and aplies volumes to them based on menu_settings
 def _register_sound(name, filename, volume):
     if not init_audio():
         return None
 
+    # Paths for the SFX
     path = os.path.join(SOUND_FX_DIR, filename)
-    mixer = _get_mixer()
+    
+    # check if the mixer is read (machine audio available)
+    mixer = _get_mixer() 
     if mixer is None:
         return None
 
@@ -83,8 +105,11 @@ def _register_sound(name, filename, volume):
         sound = mixer.Sound(path)
     except (pygame.error, FileNotFoundError, NotImplementedError):
         return None
-    sound.set_volume(volume)
+
+    # SFX setter with volumes
+    SOUND_VOLUMES[name] = volume
     _sounds[name] = sound
+    apply_audio_settings()
     return sound
 
 
@@ -103,16 +128,22 @@ def _resolve_audio_path(filename):
     if os.path.exists(music_path):
         return music_path
     return sound_fx_path
+def load_game_sfx():
+    load_sound("alien_hit", "alien-being-hit.mp3", volume=0.55)
+    load_sound("boss_damage", "boss-damage.mp3", volume=0.6)
+    load_sound("game_over", "game-over.mp3", volume=0.7)
+    load_sound("gun_shot", "gun-shot.mp3", volume=0.45)
+    load_sound("player_hit", "player-being-damaged.mp3", volume=0.6)
 
 
-def _get_music_volume(filename, volume):
+def _get_music_base_volume(filename, volume):
     if volume is not None:
         return max(0.0, min(1.0, volume))
-    return MUSIC_VOLUMES.get(filename, _music_volume)
+    return MUSIC_VOLUMES.get(filename, 1.0)
 
 
 def play_music(filename, loops=-1, volume=None):
-    global _current_music
+    global _current_music, _current_music_base_volume
 
     if not init_audio():
         return False
@@ -127,16 +158,18 @@ def play_music(filename, loops=-1, volume=None):
         if _current_music != music_path:
             mixer.music.load(music_path)
             _current_music = music_path
-        mixer.music.set_volume(_get_music_volume(filename, volume))
+        _current_music_base_volume = _get_music_base_volume(filename, volume)
+        apply_audio_settings()
         mixer.music.play(loops)
         return True
     except (pygame.error, FileNotFoundError, NotImplementedError):
         _current_music = None
+        _current_music_base_volume = None
         return False
 
 
 def stop_music():
-    global _current_music
+    global _current_music, _current_music_base_volume
 
     if not is_ready():
         return
@@ -147,6 +180,7 @@ def stop_music():
 
     mixer.music.stop()
     _current_music = None
+    _current_music_base_volume = None
 
 
 def ensure_music(filename, loops=-1, volume=None):
