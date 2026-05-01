@@ -8,7 +8,7 @@ import Game.audio as audio
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Menu")
 
-BG_PATH = os.path.join(ASSETS_DIR, "BG.png")
+BG_PATH = os.path.join(ASSETS_DIR, "BG_ver02.png") # updated to alien version
 START_BTN_PATH = os.path.join(ASSETS_DIR, "Start_BTN.png")
 NEW_GAME_BTN_PATH = os.path.join(ASSETS_DIR, "New_Game_BTN.png")
 SETTINGS_BTN_PATH = os.path.join(ASSETS_DIR, "Settings_BTN.png")
