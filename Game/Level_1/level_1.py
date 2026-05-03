@@ -76,7 +76,7 @@ exit_transition_active = False
 exit_transition_fading = False
 exit_transition_alpha = 0
 exit_transition_target = pygame.Vector2()
-EXIT_WALK_SPEED = 90
+EXIT_WALK_SPEED = 250
 EXIT_FADE_SPEED = 170
 
 
@@ -336,7 +336,7 @@ def start_exit_transition():
     exit_transition_active = True
     exit_transition_fading = False
     exit_transition_alpha = 0
-    exit_transition_target.update(LEVEL_AREA.centerx, LEVEL_AREA.bottom - player.rect.height // 2 - 6)
+    exit_transition_target.update(LEVEL_AREA.centerx, LEVEL_AREA.top + player.rect.height // 2)
     player.dashing = False
 
 def update_exit_transition(dt):
