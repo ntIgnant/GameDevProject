@@ -85,6 +85,12 @@ resume_countdown = 0.0
 fire_rate = 5
 fire_timer = 0
 shoot_cooldown = 1 / fire_rate
+exit_transition_active = False
+exit_transition_fading = False
+exit_transition_alpha = 0
+exit_transition_target = pygame.Vector2()
+EXIT_WALK_SPEED = 90
+EXIT_FADE_SPEED = 170
 
 # This is the 'damange rate' of the enemy to the player
 # Lower = Faster damage
@@ -279,6 +285,7 @@ def start_level():
     """Call once when entering Level 2."""
     global player, enemies, obstacle, bullets, boss_bullets, is_paused, resume_countdown
     global contact_damage_timer, timer, boss, boss_defeated, upgrades_spawn
+    global exit_transition_active, exit_transition_fading, exit_transition_alpha
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
@@ -304,6 +311,9 @@ def start_level():
 
     is_paused = False
     resume_countdown = 0.0
+    exit_transition_active = False
+    exit_transition_fading = False
+    exit_transition_alpha = 0
     contact_damage_timer = 0.0
     timer.minutes = 2
     timer.seconds = 120
@@ -354,6 +364,55 @@ def handle_level_event(event):
     if player:
         player.handle_event(event)
 
+def start_exit_transition():
+    global exit_transition_active, exit_transition_fading, exit_transition_alpha
+
+    exit_transition_active = True
+    exit_transition_fading = False
+    exit_transition_alpha = 0
+    exit_transition_target.update(LEVEL_AREA.centerx, LEVEL_AREA.bottom - player.rect.height // 2 - 6)
+    player.dashing = False
+
+def update_exit_transition(dt):
+    global exit_transition_fading, exit_transition_alpha
+
+    if not exit_transition_fading:
+        current = pygame.Vector2(player.rect.center)
+        to_target = exit_transition_target - current
+
+        if to_target.length() > 3:
+            movement = to_target.normalize() * EXIT_WALK_SPEED * dt
+            if movement.length() > to_target.length():
+                movement = to_target
+
+            player.rect.center = (round(current.x + movement.x), round(current.y + movement.y))
+            if abs(movement.x) > 0.1:
+                player.facing_right = movement.x > 0
+
+            player.timer += dt
+            if player.timer > 0.14:
+                player.timer = 0
+                player.frame_index = (player.frame_index + 1) % len(player.frames)
+        else:
+            player.rect.center = (round(exit_transition_target.x), round(exit_transition_target.y))
+            player.frame_index = 0
+            exit_transition_fading = True
+    else:
+        exit_transition_alpha = min(255, exit_transition_alpha + EXIT_FADE_SPEED * dt)
+        if exit_transition_alpha >= 255:
+            return "level_complete"
+
+    camera.update(player)
+    return None
+
+def draw_exit_transition(screen):
+    if not exit_transition_active or exit_transition_alpha <= 0:
+        return
+
+    fade = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    fade.fill((0, 0, 0, int(exit_transition_alpha)))
+    screen.blit(fade, (0, 0))
+
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
     global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, fire_timer
@@ -374,6 +433,9 @@ def update_level(dt, keys, events):
     if resume_countdown > 0:
         resume_countdown = max(0.0, resume_countdown - dt)
         return None
+
+    if exit_transition_active:
+        return update_exit_transition(dt)
 
     # The player's asset will be flipped based on the direction of the mouse
     # So, the player always faces the correct direction when shooting
@@ -497,7 +559,8 @@ def update_level(dt, keys, events):
             boss = None
             boss_bullets = []
             boss_defeated = True
-            return "level_complete"
+            start_exit_transition()
+            return None
 
     #This section updates the boss bullets after they leave the boss
     #They disappear if they leave the level, hit obstacles, or hit the player
@@ -586,6 +649,7 @@ def draw_level(screen):
         pause_menu.draw_pause_button(screen)
         
     timer.draw(screen)
+    draw_exit_transition(screen)
     
 
 # Tool used to visualize limited areas for player/enemies during developement
