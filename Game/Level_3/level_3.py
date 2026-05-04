@@ -75,6 +75,9 @@ resume_countdown = 0.0
 fire_rate = 5
 fire_timer = 0
 shoot_cooldown = 1 / fire_rate
+exit_transition_active = False
+exit_transition_alpha = 0
+EXIT_FADE_SPEED = 170
 
 # This is the 'damange rate' of the enemy to the player
 # Lower = Faster damage
@@ -250,6 +253,7 @@ def rebuild_layout():
 def start_level():
     """Call once when entering Level 3."""
     global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss, upgrades_spawn
+    global exit_transition_active, exit_transition_alpha
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
@@ -270,6 +274,8 @@ def start_level():
     )
     is_paused = False
     resume_countdown = 0.0
+    exit_transition_active = False
+    exit_transition_alpha = 0
     contact_damage_timer = 0.0
     timer.minutes = 2
     timer.seconds = 120
@@ -320,6 +326,31 @@ def handle_level_event(event):
     if player:
         player.handle_event(event)
 
+def start_exit_transition():
+    global exit_transition_active, exit_transition_alpha
+
+    exit_transition_active = True
+    exit_transition_alpha = 0
+    player.dashing = False
+
+def update_exit_transition(dt):
+    global exit_transition_alpha
+
+    exit_transition_alpha = min(255, exit_transition_alpha + EXIT_FADE_SPEED * dt)
+    if exit_transition_alpha >= 255:
+        return "level_complete"
+
+    camera.update(player)
+    return None
+
+def draw_exit_transition(screen):
+    if not exit_transition_active or exit_transition_alpha <= 0:
+        return
+
+    fade = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    fade.fill((0, 0, 0, int(exit_transition_alpha)))
+    screen.blit(fade, (0, 0))
+
 # Function to update the 'state' of the match after every movement
 def update_level(dt, keys, events):
     global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, fire_timer
@@ -339,6 +370,9 @@ def update_level(dt, keys, events):
     if resume_countdown > 0:
         resume_countdown = max(0.0, resume_countdown - dt)
         return None
+
+    if exit_transition_active:
+        return update_exit_transition(dt)
 
     # The player's asset will be flipped based on the direction of the mouse
     # So, the player always faces the correct direction when shooting
@@ -490,7 +524,8 @@ def update_level(dt, keys, events):
             audio.play_sound("success")
             audio.ensure_music("in-game.mp3")
             boss = None
-            return "level_complete"
+            start_exit_transition()
+            return None
         
     
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
@@ -558,6 +593,7 @@ def draw_level(screen):
         pause_menu.draw_pause_button(screen)
         
     timer.draw(screen)
+    draw_exit_transition(screen)
     
 
 # Tool used to visualize limited areas for player/enemies during developement

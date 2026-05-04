@@ -8,7 +8,7 @@ import Game.audio as audio
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Menu")
 
-BG_PATH = os.path.join(ASSETS_DIR, "BG_ver04.png") # updated to alien version
+BG_PATH = os.path.join(ASSETS_DIR, "BG_ver05.png") # updated to alien version + Main Title
 START_BTN_PATH = os.path.join(ASSETS_DIR, "Start_BTN.png")
 NEW_GAME_BTN_PATH = os.path.join(ASSETS_DIR, "New_Game_BTN.png")
 SETTINGS_BTN_PATH = os.path.join(ASSETS_DIR, "Settings_BTN.png")
@@ -52,19 +52,21 @@ def draw_main_screen(screen):
 
     screen.blit(background_img, (0, 0))
 
-    # Config for the Title and Text (for now)
-    panel = pygame.Surface((TITLE_RECT.width, TITLE_RECT.height), pygame.SRCALPHA)
-    panel.fill((20, 40, 90, 200))  # Dark blue with transparency
-    screen.blit(panel, TITLE_RECT.topleft)
+    # The following commented-out lines are the ones that draw the main title rectangle + text
+    # If we use thioss instead of the custom title in the background, just remove as comment
 
-    # Border style
-    pygame.draw.rect(screen, (80, 180, 255), TITLE_RECT, 3, border_radius=20)
+    # Title drawing disabled because the current background already includes the main title.
+    # Keep this block here in case the separate title needs to be restored later.
+    # panel = pygame.Surface((TITLE_RECT.width, TITLE_RECT.height), pygame.SRCALPHA)
+    # panel.fill((20, 40, 90, 200))  # Dark blue with transparency
+    # screen.blit(panel, TITLE_RECT.topleft)
 
-    # Title text and style
-    font_size = int(TITLE_RECT.height * 0.6)
-    font_title = pygame.font.SysFont("Orbitron-Regular.ttf", font_size, bold=True)
-    title_text = font_title.render("Alien Outbreak", True, (255, 255, 255))
-    screen.blit(title_text, title_text.get_rect(center=TITLE_RECT.center))
+    # pygame.draw.rect(screen, (80, 180, 255), TITLE_RECT, 3, border_radius=20)
+
+    # font_size = int(TITLE_RECT.height * 0.6)
+    # font_title = pygame.font.SysFont("Orbitron-Regular.ttf", font_size, bold=True)
+    # title_text = font_title.render("Alien Outbreak", True, (255, 255, 255))
+    # screen.blit(title_text, title_text.get_rect(center=TITLE_RECT.center))
 
     screen.blit(start_btn_img, START_RECT.topleft)
     screen.blit(new_game_btn_img, NEW_GAME_RECT.topleft)
