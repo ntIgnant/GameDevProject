@@ -10,6 +10,7 @@ import Game.Level_3.level_3 as level_3 # Level 3 logic
 import Game.pause_menu as pause_menu
 import Game.game_over as game_over
 import Game.audio as audio
+import Game.story_video as story_video
 
 pygame.init()
 audio.init_audio()
@@ -46,6 +47,10 @@ def set_state(new_state):
 
     elif new_state == "level":
         audio.ensure_music("in-game.mp3") # 'in game music' sfx call
+
+    elif new_state == "final_video":
+        audio.stop_music()
+        story_video.start_video()
 
 # Function to start level depending on the 'current last' level
 # It initializes with level 1
@@ -156,8 +161,23 @@ while running:
                 if 2 not in settings.LEVELS_COMPLETED:
                     settings.LEVELS_COMPLETED.append(2)
                 start_level(level_3)
+            elif current_level is level_3:
+                if 3 not in settings.LEVELS_COMPLETED:
+                    settings.LEVELS_COMPLETED.append(3)
+                set_state("final_video")
 
-    # draw current state
+    # Action to jump to event 'final video' for the final sequence of the story
+    # This action is axecuted once the main boss of lvl3 is defeated. Logic playback is on story_video.py
+    elif state == "final_video":
+        for event in events:
+            if story_video.handle_event(event) == "done":
+                set_state("menu") # jumpt yo 'main menu' once the fina_video blayback is finished
+                break
+        else:
+            if story_video.update(dt) == "done":
+                set_state("menu")
+
+    # draw current state depending on the event flag
     if state == "menu":
         menu.draw_main_screen(screen)
     elif state == "menu_settings":
@@ -167,9 +187,12 @@ while running:
         current_level.draw_level(screen)
     elif state == "game_over":
         game_over.draw_overlay(screen)
+    elif state == "final_video":
+        story_video.draw(screen)
 
     pygame.display.update()
 
 audio.stop_all_sfx()
 audio.stop_music()
+story_video.stop_video()
 pygame.quit()
