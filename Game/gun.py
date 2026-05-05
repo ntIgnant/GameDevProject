@@ -32,3 +32,38 @@ class GunProjectile:
         rect = self.image.get_rect(center = camera.apply(self.rect).center)
         #pygame.draw.rect(screen, self.color, rect)
         screen.blit(self.image, rect)
+        
+# For boss3, we need bullets that will follow the player (homing bullets)
+# This class will handle this type of bullets
+# It will be like an extentions of the original class
+
+class HomingProjectile(GunProjectile):
+    def __init__(self, x, y, direction, turn_speed = 80):
+        super().__init__(x, y, direction)
+        self.speed = 80 # not hard to dodge
+        self.turn_speed = turn_speed
+        self.target_center = None
+        
+    def update(self, dt):
+        if self.target_center:
+            target = pygame.Vector2(self.target_center) - self.pos
+            
+            # Turn the bullets accordingly when it follow the player
+            # This makes the bullets have the correct angle and update every frame
+            if target.length_squared() > 0:
+                current_angle = math.degrees(math.atan2(self.direction.y, self.direction.x))
+                target_angle = math.degrees(math.atan2(target.y, target.x))
+                
+                # Get the correct difference and turn in the correct direction
+                difference = (target_angle  - current_angle + 180) % 360 - 180
+                
+                # This helps the bullet to turn gradually rather, in a smooth way
+                turn = max(-self.turn_speed *dt, min(self.turn_speed *dt, difference))
+                
+                # The new angle gets turned into a direction vector again
+                rad = math.radians(current_angle + turn)
+                self.direction = pygame.Vector2(math.cos(rad), math.sin(rad))
+            
+            # Update other values
+            self.pos += self.direction * self.speed * dt
+            self.rect.center = self.pos    
