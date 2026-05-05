@@ -5,7 +5,8 @@ import math
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "Extras")
 
-BULLET_PATH = os.path.join(ASSETS_DIR, "bullet.png")
+BULLET_PATH = os.path.join(ASSETS_DIR, "bullet.png") # bullet of player
+PLASMA_BULLET_PATH = os.path.join(ASSETS_DIR, "plasma.png") # this asset is for the 'tracking attack' of main boss lvl3
 
 class GunProjectile:
     bullet_img = None
@@ -38,8 +39,16 @@ class GunProjectile:
 # It will be like an extentions of the original class
 
 class HomingProjectile(GunProjectile):
+    homing_img = None
+
     def __init__(self, x, y, direction, turn_speed = 80):
         super().__init__(x, y, direction)
+        if HomingProjectile.homing_img is None:
+            homing_raw = pygame.image.load(PLASMA_BULLET_PATH).convert_alpha()
+            HomingProjectile.homing_img = pygame.transform.scale(homing_raw, (25, 25))
+
+        self.image = HomingProjectile.homing_img
+        self.rect = self.image.get_rect(center = (x, y))
         self.speed = 80 # not hard to dodge
         self.turn_speed = turn_speed
         self.target_center = None
@@ -66,4 +75,4 @@ class HomingProjectile(GunProjectile):
             
             # Update other values
             self.pos += self.direction * self.speed * dt
-            self.rect.center = self.pos    
+            self.rect.center = self.pos
