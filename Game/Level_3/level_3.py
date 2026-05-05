@@ -7,9 +7,8 @@ import Game.settings as settings
 from Game.player import Player
 from Game.gun import GunProjectile
 from .sec_enemy_lev3 import SecEnemyLev3, load_walk_frames, load_attack_frames
-from .boss_lev3 import BossLev3, load_walk_frames_boss, load_attack_frames_boss
+from .boss_lev3 import BossLev3, load_walk_frames_boss, load_attack_frames_boss, load_fire_circle_frames_boss
 from Game.obstacles import Obstacles
-from Game.puddle import load_frames_puddle, LavaPuddle
 from Game.timer import Timer
 from Game.camera import Camera
 import Game.pause_menu as pause_menu
@@ -61,10 +60,12 @@ enemies = []
 boss = None
 puddles = []
 bullets = []
+boss_bullets = []
 walk_frames = []
 attack_frames = []
 walk_frames_boss = []
 attack_frames_boss = []
+fire_circle_frames_boss = []
 puddle_frames = []
 timer = Timer(minutes = 2)
 camera = Camera()
@@ -79,6 +80,24 @@ exit_transition_active = False
 exit_transition_alpha = 0
 EXIT_FADE_SPEED = 170
 
+# This controls the camera zoom for Level 3
+# The boss fight zooms out a bit so the player can see more of the arena
+NORMAL_CAMERA_ZOOM = 2.2
+BOSS_CAMERA_ZOOM = 1.75
+CORNER_DEBUG_COLOR = (220, 70, 70, 153) # For development only, to visualize the restricted areas of the level
+is_paused = False
+resume_countdown = 0.0
+fire_rate = 5
+fire_timer = 0
+shoot_cooldown = 1 / fire_rate
+exit_transition_active = False
+exit_transition_fading = False
+exit_transition_alpha = 0
+exit_transition_target = pygame.Vector2()
+EXIT_WALK_SPEED = 250
+EXIT_FADE_SPEED = 170
+
+
 # This is the 'damange rate' of the enemy to the player
 # Lower = Faster damage
 contact_damage_cooldown = 1.02
@@ -87,6 +106,9 @@ contact_damage_timer = 1.0
 # 'damage rate' of one player's bullet. Used to damange enemy
 # Higher number -> more damange
 bullet_damage = 10
+
+# Damage from one boss bullet when it touches the player
+boss_bullet_damage = 10
 
 # The bullets will appear from the end of the gun
 gun_offset = 25
@@ -126,6 +148,18 @@ def build_corner_object_rects():
             )
         )
     return rects
+
+def boss_camera_base_zoom():
+    # Camera.update multiplies base_zoom by the resolution scale
+    # For the boss fight we want the final zoom to stay zoomed out in HD and FHD
+    resolution_scale = min(
+        settings.WIDTH / BASE_LEVEL_SIZE[0],
+        settings.HEIGHT / BASE_LEVEL_SIZE[1],
+    )
+    if resolution_scale <= 0:
+        return BOSS_CAMERA_ZOOM
+    return BOSS_CAMERA_ZOOM / resolution_scale
+
 
 # This function generates the seconary enemies in random possitions (avoiding restricted areas)
 def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, attack_frames, player_rect=None):
@@ -167,7 +201,7 @@ def spawn_secondary_enemies(count, area_rect, obstacles, walk_frames, attack_fra
     return spawned_enemies
 
 # This function generates the boss in a random possition (avoiding restricted areas)
-def spawn_boss(area_rect, obstacles, walk_frames_boss, attack_frames_boss, player_rect=None):
+def spawn_boss(area_rect, obstacles, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss, player_rect=None):
     boss_size = 150
     padding = 12 # This value adds a 'gap/padding' between the random place where the boss are generated, for them not to be too close
     max_attempts = 200
@@ -194,7 +228,7 @@ def spawn_boss(area_rect, obstacles, walk_frames_boss, attack_frames_boss, playe
         if any(candidate_rect.colliderect(blocker) for blocker in blockers):
             continue
 
-        return BossLev3(spawn_pos, walk_frames_boss, attack_frames_boss)
+        return BossLev3(spawn_pos, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss)
 
     return None
 
@@ -219,7 +253,7 @@ def get_enemy_target_point(player_center, enemy_pos, enemy_index, enemy_count, r
 # Load Resources to initialize the level (background, ... structures should go here as well)
 def load_assets():
     """Call after pygame display is initialized."""
-    global background, walk_frames, attack_frames, debug_font, walk_frames_boss, attack_frames_boss, puddle_frames
+    global background, walk_frames, attack_frames, debug_font, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss
 
     raw_background = pygame.image.load(BACKGROUND_PATH).convert()
     background = pygame.transform.smoothscale(raw_background, BASE_LEVEL_SIZE)
@@ -228,7 +262,7 @@ def load_assets():
     attack_frames = load_attack_frames()
     walk_frames_boss = load_walk_frames_boss()
     attack_frames_boss = load_attack_frames_boss()
-    puddle_frames = load_frames_puddle()
+    fire_circle_frames_boss = load_fire_circle_frames_boss()
     debug_font = pygame.font.SysFont(None, 24)
 
 def rebuild_layout():
@@ -252,15 +286,17 @@ def rebuild_layout():
 # Creates the objects Player and Enemy (just secondary enemy for now) when the level starts
 def start_level():
     """Call once when entering Level 3."""
-    global player, enemies, obstacle, bullets, is_paused, resume_countdown, contact_damage_timer, timer, puddles, boss, upgrades_spawn
-    global exit_transition_active, exit_transition_alpha
+    global player, enemies, obstacle, bullets, boss_bullets, is_paused, resume_countdown
+    global contact_damage_timer, timer, boss, boss_defeated, upgrades_spawn
+    global exit_transition_active, exit_transition_fading, exit_transition_alpha
 
     rebuild_level_area()
     player = Player(LEVEL_AREA.center)
     bullets = []
-    puddles = []
     upgrades_spawn = []
     boss = None
+    boss_bullets = []
+    boss_defeated = False
     obstacle = Obstacles()
     obstacle.set_corner_blockers(build_corner_object_rects())
     obstacle.spawn(area_rect=LEVEL_AREA)
@@ -327,18 +363,42 @@ def handle_level_event(event):
         player.handle_event(event)
 
 def start_exit_transition():
-    global exit_transition_active, exit_transition_alpha
+    global exit_transition_active, exit_transition_fading, exit_transition_alpha
 
     exit_transition_active = True
+    exit_transition_fading = False
     exit_transition_alpha = 0
+    exit_transition_target.update(LEVEL_AREA.centerx, LEVEL_AREA.top + player.rect.height // 2)
     player.dashing = False
 
 def update_exit_transition(dt):
-    global exit_transition_alpha
+    global exit_transition_fading, exit_transition_alpha
 
-    exit_transition_alpha = min(255, exit_transition_alpha + EXIT_FADE_SPEED * dt)
-    if exit_transition_alpha >= 255:
-        return "level_complete"
+    if not exit_transition_fading:
+        current = pygame.Vector2(player.rect.center)
+        to_target = exit_transition_target - current
+
+        if to_target.length() > 3:
+            movement = to_target.normalize() * EXIT_WALK_SPEED * dt
+            if movement.length() > to_target.length():
+                movement = to_target
+
+            player.rect.center = (round(current.x + movement.x), round(current.y + movement.y))
+            if abs(movement.x) > 0.1:
+                player.facing_right = movement.x > 0
+
+            player.timer += dt
+            if player.timer > 0.14:
+                player.timer = 0
+                player.frame_index = (player.frame_index + 1) % len(player.frames)
+        else:
+            player.rect.center = (round(exit_transition_target.x), round(exit_transition_target.y))
+            player.frame_index = 0
+            exit_transition_fading = True
+    else:
+        exit_transition_alpha = min(255, exit_transition_alpha + EXIT_FADE_SPEED * dt)
+        if exit_transition_alpha >= 255:
+            return "level_complete"
 
     camera.update(player)
     return None
@@ -356,6 +416,7 @@ def update_level(dt, keys, events):
     global bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, fire_timer
 
     fire_timer -= dt
+    global bullets, boss_bullets, enemies, resume_countdown, contact_damage_timer, timer, boss, boss_defeated
 
     if not player:
         return
@@ -420,6 +481,12 @@ def update_level(dt, keys, events):
                 hit_enemy = True
                 break
 
+        #this lets the player's bullets damage the boss once the boss has spawned
+        if boss and bullet.rect.colliderect(boss.rect):
+            boss.take_damage(bullet_damage) # Update boss health (take damange)
+            audio.play_sound("boss_damage")
+            hit_enemy = True
+
         if hit_enemy:
             continue
 
@@ -435,6 +502,9 @@ def update_level(dt, keys, events):
         enemy_rects.append(boss.rect.inflate(-60,-30))
     
     player.update(dt, keys, obstacle, upgrades_spawn, enemy_rects, LEVEL_AREA)
+    
+    # When the boss exists, the camera zooms out slightly for better visibility
+    camera.base_zoom = boss_camera_base_zoom() if boss else NORMAL_CAMERA_ZOOM
     camera.update(player)
     # Pull one multiplier from the player so freeze can slow every enemy here
     enemy_speed_multiplier = player.get_enemy_speed_multiplier()
@@ -459,8 +529,8 @@ def update_level(dt, keys, events):
     enemies = [enemy for enemy in enemies if enemy.is_alive()]
     
     # If all the secondary enemies are defeated, spawn the boss
-    if ENABLE_BOSS and boss is None and not enemies:
-        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, player.rect)
+    if ENABLE_BOSS and boss is None and not enemies and not boss_defeated:
+        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss, player.rect)
         if boss:
             audio.play_music("boss-intro.mp3")
         
@@ -474,30 +544,20 @@ def update_level(dt, keys, events):
             speed_multiplier=enemy_speed_multiplier,
         )
         
-        # Spawn the puddle
-        while boss.puddle_queue:
-            boss.puddle_queue.pop()
-            
-            # Offsets to make the lava puddle be centered at the player's feet based on the direction they face
-            if player.facing_right:
-                puddle_x = player.rect.centerx + 20
-            else:
-                puddle_x = player.rect.centerx + 35
-                
-            puddle_y = player.rect.centery
-            
-            puddles.append(LavaPuddle((puddle_x, puddle_y), puddle_frames))
-            
-        for puddle in puddles:
-            puddle.update(dt)
-            damage = puddle.give_damage(player.rect, dt)
-            
-            if damage:
-                player.take_damage(damage)
-                
-        for puddle in puddles[:]:
-            if puddle.is_done():
-                puddles.remove(puddle)
+        # The boss creates bullets inside its own class
+        # This moves those bullets into the level so they can be updated and drawn here
+        if boss.bullet_queue:
+            boss_bullets.extend(boss.bullet_queue)
+            boss.bullet_queue.clear()
+        
+        if not boss.is_alive():
+            audio.play_sound("success")
+            audio.ensure_music("in-game.mp3")
+            boss = None
+            boss_bullets = []
+            boss_defeated = True
+            start_exit_transition()
+            return None
         
         # Logic for bullet collision witht the boss (based on restricted areas)
         # If the bullet overlaps a restricted area 'e.g boss area/off map ', then they disapear
@@ -527,7 +587,27 @@ def update_level(dt, keys, events):
             start_exit_transition()
             return None
         
-    
+    #This section updates the boss bullets after they leave the boss
+    #They disappear if they leave the level, hit obstacles, or hit the player
+    active_boss_bullets = []
+    for bullet in boss_bullets:
+        if hasattr(bullet, "target_center"):
+            bullet.target_center = player.rect.center
+            
+        bullet.update(dt)
+        if not LEVEL_AREA.colliderect(bullet.rect):
+            continue
+
+        if not getattr(bullet, "ignore_obstacles", False) and any(bullet.rect.colliderect(rect) for rect in obstacle.collision_rects):
+            continue
+
+        if bullet.rect.colliderect(player.rect):
+            player.take_damage(boss_bullet_damage)
+            continue
+
+        active_boss_bullets.append(bullet)
+    boss_bullets = active_boss_bullets
+        
     enemy_touching_player = any(rects_touch_or_overlap(enemy.rect, player.rect) for enemy in enemies)
     if enemy_touching_player and contact_damage_timer <= 0:
         player.take_damage(25)
@@ -561,13 +641,14 @@ def draw_level(screen):
     background_frame_zoom = pygame.transform.scale(background, background_camera_frame.size)
     screen.blit(background_frame_zoom, background_camera_frame.topleft)
 
-    for puddle in puddles:
-        puddle.draw(screen, camera)
-
     if player:
         player.draw(screen, camera)
 
     for bullet in bullets:
+        bullet.draw(screen, camera)
+
+    # Boss bullets are drawn separately from player bullets
+    for bullet in boss_bullets:
         bullet.draw(screen, camera)
 
     for e in enemies:
