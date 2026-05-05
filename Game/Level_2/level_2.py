@@ -109,7 +109,6 @@ gun_offset = 25
 
 #Variable that defines how many seconadry enemies are going to spawn (4 as default, maybe 6 to make it harder?)
 BASE_SEC_ENEMY_COUNT = 4
-
 SEC_ENEMY_COUNT = 0 if settings.GLOBAL_DEV_MODE else BASE_SEC_ENEMY_COUNT
 ENABLE_BOSS = True
 
