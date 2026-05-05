@@ -19,7 +19,7 @@ from Game.upgrades import Upgrades
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "Assets")
 BASE_LEVEL_SIZE = settings.RESOLUTIONS["HD"]
-BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo2.png")
+BACKGROUND_PATH = os.path.join(ASSETS_DIR, "Background", "demo2_tutorial.png") # new background image + tutorial info
 
 
 # Allowed area where the player/enemies can move | NOTE: This will be different depending on the level (corner boxes differ between background imgs)
@@ -31,10 +31,10 @@ LEVEL_1_AREA_CONFIG = {
     # Each item is [offset_x, offset_y, width, height], measured from the walkable area's top-left corner.
     "corner_objects": [
         # Top left corner
-        [0, 0, 210, 80],
+        [0, 0, 200, 35],
 
         # Top right corner
-        [900, -30, 190, 80],
+        [900, -30, 190, 65],
 
         # Bottom left corner
         [0, 280, 100, 100],
