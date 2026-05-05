@@ -11,6 +11,7 @@ import Game.pause_menu as pause_menu
 import Game.game_over as game_over
 import Game.audio as audio
 import Game.story_video as story_video
+import Game.story_frames as story_frames
 
 pygame.init()
 audio.init_audio()
@@ -24,6 +25,7 @@ menu.load_menu_assets()
 menu_settings.rebuild_layout()
 pause_menu.load_assets()
 game_over.rebuild_layout()
+story_frames.load_assets()
 
 pygame.display.set_caption("Game name")
 clock = pygame.time.Clock()
@@ -35,6 +37,8 @@ level_3.load_assets()
 running = True # boolean for the general game loop
 state = "menu" # this will vary depending on the state of the game [menu, menu_settings, level, etc]
 current_level = level_1
+story_next_level = None
+intro_story_seen = False
 
 
 def set_state(new_state):
@@ -52,6 +56,9 @@ def set_state(new_state):
         audio.stop_music()
         story_video.start_video()
 
+    elif new_state == "story_frame":
+        audio.stop_music()
+
 # Function to start level depending on the 'current last' level
 # It initializes with level 1
 def start_level(level_module):
@@ -60,6 +67,24 @@ def start_level(level_module):
     current_level = level_module
     current_level.start_level()
     set_state("level")
+
+
+def start_story_frame(scene_name, level_module):
+    global story_next_level
+
+    story_next_level = level_module
+    story_frames.start_scene(scene_name, "start_story_level")
+    set_state("story_frame")
+
+
+def start_level_with_intro(level_module):
+    global intro_story_seen
+
+    if level_module is level_1 and not intro_story_seen:
+        intro_story_seen = True
+        start_story_frame("scene_01", level_module)
+    else:
+        start_level(level_module)
 
 
 set_state(state)
@@ -80,8 +105,9 @@ while running:
 
                 # Case when the 'new game' button is pressed | start from level 1
                 if action == "new_game":
+                    intro_story_seen = False
                     settings.LEVELS_COMPLETED.clear() # Clear all the completed levels to start a new game
-                    start_level(level_1)
+                    start_level_with_intro(level_1)
                 
                 # Case when the 'continue / start' button is pressed | start the game from the last level that was completed
                 elif action == "continue":
@@ -92,7 +118,7 @@ while running:
 
                     # Evalueate level execution based on next_level value
                     if next_level == 1:
-                        start_level(level_1)
+                        start_level_with_intro(level_1)
                     elif next_level == 2:
                         start_level(level_2)
                     elif next_level == 3:
@@ -127,6 +153,7 @@ while running:
                 level_1.rebuild_layout()
                 level_2.rebuild_layout()
                 level_3.rebuild_layout()
+                story_frames.rebuild_layout()
         
         # Case where 'game_over' flag is returned
         # This triggers the game over screen to the user
@@ -138,6 +165,9 @@ while running:
                     start_level(current_level)
                 elif action == "menu":
                     set_state("menu")
+
+        elif state == "story_frame":
+            story_frames.handle_event(event)
             
 
     level_action = None
@@ -156,7 +186,7 @@ while running:
             if current_level is level_1:
                 if 1 not in settings.LEVELS_COMPLETED:
                     settings.LEVELS_COMPLETED.append(1)
-                start_level(level_2)
+                start_story_frame("scene_02", level_2)
             elif current_level is level_2:
                 if 2 not in settings.LEVELS_COMPLETED:
                     settings.LEVELS_COMPLETED.append(2)
@@ -177,6 +207,13 @@ while running:
             if story_video.update(dt) == "done":
                 set_state("menu")
 
+    elif state == "story_frame":
+        action = story_frames.update(dt)
+        if action == "start_story_level" and story_next_level is not None:
+            start_level(story_next_level)
+            story_next_level = None
+            events = []
+
     # draw current state depending on the event flag
     if state == "menu":
         menu.draw_main_screen(screen)
@@ -187,6 +224,8 @@ while running:
         current_level.draw_level(screen)
     elif state == "game_over":
         game_over.draw_overlay(screen)
+    elif state == "story_frame":
+        story_frames.draw(screen)
     elif state == "final_video":
         story_video.draw(screen)
 
