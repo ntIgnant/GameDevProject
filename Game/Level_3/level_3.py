@@ -262,7 +262,7 @@ def load_assets():
     attack_frames = load_attack_frames()
     walk_frames_boss = load_walk_frames_boss()
     attack_frames_boss = load_attack_frames_boss()
-    fire_circle_frames_boss = load_attack_frames_boss()
+    fire_circle_frames_boss = load_fire_circle_frames_boss()
     debug_font = pygame.font.SysFont(None, 24)
 
 def rebuild_layout():
@@ -530,7 +530,7 @@ def update_level(dt, keys, events):
     
     # If all the secondary enemies are defeated, spawn the boss
     if ENABLE_BOSS and boss is None and not enemies and not boss_defeated:
-        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, player.rect)
+        boss = spawn_boss(LEVEL_AREA, obstacle, walk_frames_boss, attack_frames_boss, fire_circle_frames_boss, player.rect)
         if boss:
             audio.play_music("boss-intro.mp3")
         

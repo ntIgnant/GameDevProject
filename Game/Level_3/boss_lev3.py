@@ -110,6 +110,7 @@ class BossLev3:
         # The boss tries to keep a good distance and strafe around the player
         self.preferred_min_distance = 220
         self.preferred_max_distance = 360
+        self.phase_two_distance = self.preferred_max_distance
         self.strafe_direction = 1
         self.strafe_timer = 0.0
         self.strafe_switch_time = 2.0
