@@ -8,10 +8,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 STORY_DIR = os.path.join(BASE_DIR, "Assets", "Story")
 
 # Story 'scenes' paths
-# Maybe add a third one for lvl2 -> lvl3 transition
+# [lvl1 -> lvl2, lvl2 -> lvl3, final]
 SCENE_PATHS = {
     "scene_01": os.path.join(STORY_DIR, "scene_01.jpg"),
     "scene_02": os.path.join(STORY_DIR, "scene_02.jpg"),
+    "scene_final": os.path.join(STORY_DIR, "scene_final.jpg"),
 }
 
 # Some globals here

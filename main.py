@@ -10,7 +10,6 @@ import Game.Level_3.level_3 as level_3 # Level 3 logic
 import Game.pause_menu as pause_menu
 import Game.game_over as game_over
 import Game.audio as audio
-import Game.story_video as story_video
 import Game.story_frames as story_frames
 
 pygame.init()
@@ -52,10 +51,6 @@ def set_state(new_state):
     elif new_state == "level":
         audio.ensure_music("in-game.mp3") # 'in game music' sfx call
 
-    elif new_state == "final_video":
-        audio.stop_music()
-        story_video.start_video()
-
     elif new_state == "story_frame":
         audio.stop_music()
 
@@ -74,6 +69,14 @@ def start_story_frame(scene_name, level_module):
 
     story_next_level = level_module
     story_frames.start_scene(scene_name, "start_story_level")
+    set_state("story_frame")
+
+# Helper function to handle the 'final sequence' event to show the last storyboard
+def start_final_story_frame():
+    global story_next_level
+
+    story_next_level = None
+    story_frames.start_scene("scene_final", "menu")
     set_state("story_frame")
 
 
@@ -194,24 +197,16 @@ while running:
             elif current_level is level_3:
                 if 3 not in settings.LEVELS_COMPLETED:
                     settings.LEVELS_COMPLETED.append(3)
-                set_state("final_video")
-
-    # Action to jump to event 'final video' for the final sequence of the story
-    # This action is axecuted once the main boss of lvl3 is defeated. Logic playback is on story_video.py
-    elif state == "final_video":
-        for event in events:
-            if story_video.handle_event(event) == "done":
-                set_state("menu") # jumpt yo 'main menu' once the fina_video blayback is finished
-                break
-        else:
-            if story_video.update(dt) == "done":
-                set_state("menu")
+                start_final_story_frame()
 
     elif state == "story_frame":
         action = story_frames.update(dt)
         if action == "start_story_level" and story_next_level is not None:
             start_level(story_next_level)
             story_next_level = None
+            events = []
+        elif action == "menu":
+            set_state("menu")
             events = []
 
     # draw current state depending on the event flag
@@ -226,12 +221,9 @@ while running:
         game_over.draw_overlay(screen)
     elif state == "story_frame":
         story_frames.draw(screen)
-    elif state == "final_video":
-        story_video.draw(screen)
 
     pygame.display.update()
 
 audio.stop_all_sfx()
 audio.stop_music()
-story_video.stop_video()
 pygame.quit()
