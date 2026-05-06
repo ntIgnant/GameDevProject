@@ -13,16 +13,18 @@ START_BTN_PATH = os.path.join(ASSETS_DIR, "Start_BTN.png")
 NEW_GAME_BTN_PATH = os.path.join(ASSETS_DIR, "New_Game_BTN.png")
 SETTINGS_BTN_PATH = os.path.join(ASSETS_DIR, "Settings_BTN.png")
 EXIT_BTN_PATH = os.path.join(ASSETS_DIR, "Exit_BTN.png")
+CONTROLS_BTN_PATH = os.path.join(ASSETS_DIR, "Controls_Rules_BTN.png")
 
 background_img = None
 start_btn_img = None
 exit_btn_img = None
 new_game_btn_img = None
 settings_btn_img = None
+controls_btn_img = None
 
 # Load Menu Assets
 def load_menu_assets():
-    global background_img, start_btn_img, exit_btn_img, new_game_btn_img, settings_btn_img
+    global background_img, start_btn_img, exit_btn_img, new_game_btn_img, settings_btn_img, controls_btn_img
 
     # Background Image
     background_img = pygame.image.load(BG_PATH).convert()
@@ -43,6 +45,10 @@ def load_menu_assets():
     # 'Exit' button Image
     exit_btn_img = pygame.image.load(EXIT_BTN_PATH).convert_alpha()
     exit_btn_img = pygame.transform.smoothscale(exit_btn_img, (EXIT_RECT.width, EXIT_RECT.height))
+    
+    # 'Controls/Rules' button Image
+    controls_btn_img = pygame.image.load(CONTROLS_BTN_PATH).convert_alpha()
+    controls_btn_img = pygame.transform.smoothscale(controls_btn_img, (CONTROLS_RECT.width, CONTROLS_RECT.height))
 
 background_color = (252, 252, 255) # Default background color (as fallbac in case background image does't load properly)
 
@@ -72,6 +78,7 @@ def draw_main_screen(screen):
     screen.blit(new_game_btn_img, NEW_GAME_RECT.topleft)
     screen.blit(settings_btn_img, SETTINGS_RECT.topleft)
     screen.blit(exit_btn_img, EXIT_RECT.topleft)
+    screen.blit(controls_btn_img, CONTROLS_RECT.topleft)
 
     mouse_pos = pygame.mouse.get_pos() # object for the mouse possition (to keep track of the button click)
 
@@ -84,6 +91,8 @@ def draw_main_screen(screen):
         pygame.draw.rect(screen, (255, 255, 255), SETTINGS_RECT, 2, border_radius=10)
     if EXIT_RECT.collidepoint(mouse_pos):
         pygame.draw.rect(screen, (255, 255, 255), EXIT_RECT, 2, border_radius=10)
+    if CONTROLS_RECT.collidepoint(mouse_pos):
+        pygame.draw.rect(screen, (255, 255, 255), CONTROLS_RECT, 2, border_radius=10)
 
 def menu_options_handler(pos):
     if START_RECT.collidepoint(pos):
@@ -98,13 +107,16 @@ def menu_options_handler(pos):
     if EXIT_RECT.collidepoint(pos):
         audio.play_sound("button_click")
         return "exit"
+    if CONTROLS_RECT.collidepoint(pos):
+        audio.play_sound("button_click")
+        return "controls"
 
     return None
 
 # Function for the 'switch resolution'. to re-scale the menu layout
 def rebuild_layout():
-    global TITLE_RECT, START_RECT, NEW_GAME_RECT, SETTINGS_RECT, EXIT_RECT
-    global background_img, start_btn_img, new_game_btn_img, settings_btn_img, exit_btn_img
+    global TITLE_RECT, START_RECT, NEW_GAME_RECT, SETTINGS_RECT, EXIT_RECT, CONTROLS_RECT
+    global background_img, start_btn_img, new_game_btn_img, settings_btn_img, exit_btn_img, controls_btn_img
 
     # Scale to HD. Here the Height is not fowrced because there was a bug with it, but this is HD re-scale
     scale = settings.WIDTH / 1280
@@ -122,6 +134,7 @@ def rebuild_layout():
     NEW_GAME_RECT = pygame.Rect(0, 0, btn_w, btn_h)
     SETTINGS_RECT = pygame.Rect(0, 0, btn_w, btn_h)
     EXIT_RECT = pygame.Rect(0, 0, btn_w, btn_h)
+    CONTROLS_RECT = pygame.Rect(0, 0, btn_w, btn_h)
 
     gap = int(18 * scale)
     cx = settings.WIDTH // 2
@@ -129,8 +142,10 @@ def rebuild_layout():
 
     START_RECT.center = (cx, base_y)
     NEW_GAME_RECT.center = (cx, base_y + (btn_h + gap))
-    SETTINGS_RECT.center = (cx, base_y + 2 * (btn_h + gap))
-    EXIT_RECT.center = (cx, base_y + 3 * (btn_h + gap))
+    CONTROLS_RECT.center = (cx, base_y + 2 * (btn_h + gap))
+    SETTINGS_RECT.center = (cx, base_y + 3 * (btn_h + gap))
+    EXIT_RECT.center = (cx, base_y + 4 * (btn_h + gap))
+
 
     # Force image reload to apply re-scaling and avoid wierd sizes
     background_img = None
@@ -138,3 +153,4 @@ def rebuild_layout():
     new_game_btn_img = None
     settings_btn_img = None
     exit_btn_img = None
+    controls_btn_img = None
