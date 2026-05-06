@@ -11,6 +11,7 @@ import Game.pause_menu as pause_menu
 import Game.game_over as game_over
 import Game.audio as audio
 import Game.story_frames as story_frames
+import Game.menu_controls as menu_controls # controls/rules menu settings
 
 pygame.init()
 audio.init_audio()
@@ -132,6 +133,9 @@ while running:
                 elif action == "settings":
                     set_state("menu_settings") # change state to menu_settings to display the settings menu
 
+                elif action == "controls":
+                    set_state("menu_controls") # change state to menu_settings to display the settings menu
+
                 elif action == "exit":
                     running = False # Exit the while loop and terminate the game
 
@@ -157,6 +161,12 @@ while running:
                 level_2.rebuild_layout()
                 level_3.rebuild_layout()
                 story_frames.rebuild_layout()
+        
+        elif state == "menu_controls":
+            action = menu_controls.handle_event(event)
+            # Case of 'back' button inside settings menu
+            if action == "back":
+                set_state("menu")
         
         # Case where 'game_over' flag is returned
         # This triggers the game over screen to the user
@@ -221,6 +231,8 @@ while running:
         game_over.draw_overlay(screen)
     elif state == "story_frame":
         story_frames.draw(screen)
+    elif state == "menu_controls":
+        menu_controls.draw(screen)
 
     pygame.display.update()
 
