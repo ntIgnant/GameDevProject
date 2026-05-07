@@ -1,0 +1,2 @@
+We did the Scenes for the story with AI generation
+For the generation of the frames we used the AI model of ChatGPT o5

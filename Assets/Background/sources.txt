@@ -1,0 +1,2 @@
+We created all the background assets with AI generation
+We used ChatGPT 5o for the image generation
