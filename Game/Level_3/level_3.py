@@ -640,9 +640,6 @@ def draw_level(screen):
     background_frame_zoom = pygame.transform.scale(background, background_camera_frame.size)
     screen.blit(background_frame_zoom, background_camera_frame.topleft)
 
-    if player:
-        player.draw(screen, camera)
-
     for bullet in bullets:
         bullet.draw(screen, camera)
 
@@ -661,6 +658,10 @@ def draw_level(screen):
 
 
     obstacle.draw(screen, camera)
+    
+    if player:
+        player.draw(screen, camera)
+    
     if DEV_MODE:
         draw_corner_blocker_overlay(screen)
         draw_debug_coordinates(screen)
