@@ -594,8 +594,7 @@ def draw_level(screen):
     for puddle in puddles:
         puddle.draw(screen, camera)
 
-    if player:
-        player.draw(screen, camera)
+
 
     for bullet in bullets:
         bullet.draw(screen, camera)
@@ -611,6 +610,10 @@ def draw_level(screen):
 
 
     obstacle.draw(screen, camera)
+    
+    if player:
+        player.draw(screen, camera)
+        
     if DEV_MODE:
         draw_corner_blocker_overlay(screen)
         draw_debug_coordinates(screen)
@@ -621,6 +624,7 @@ def draw_level(screen):
         pause_menu.draw_resume_countdown(screen, max(1, math.ceil(resume_countdown)))
     else:
         pause_menu.draw_pause_button(screen)
+        
         
     timer.draw(screen)
     draw_exit_transition(screen)
