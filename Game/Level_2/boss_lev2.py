@@ -68,9 +68,9 @@ class BossLev2:
         self.rect = pygame.Rect(self.pos.x - self.size // 2, self.pos.y - self.size // 2, self.size, self.size)
         
         # Health attributes for the boss
-        self.max_health = 400
-        self.health = 400
-        self.display_health = 400.0
+        self.max_health = 300
+        self.health = 300
+        self.display_health = 300.0
  
         # Class attributes for the boss position while walking/attacking
         self.walk_frames = walk_frames

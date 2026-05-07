@@ -460,7 +460,7 @@ def update_level(dt, keys, events):
     enemy_rects = [enemy.rect for enemy in enemies]
     if boss is not None:
         # Make the rect of the boss smaller
-        enemy_rects.append(boss.rect.inflate(-60,-30))
+        enemy_rects.append(boss.rect)
     
     player.update(dt, keys, obstacle, upgrades_spawn, enemy_rects, LEVEL_AREA)
     camera.update(player)

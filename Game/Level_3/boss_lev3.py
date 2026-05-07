@@ -68,9 +68,9 @@ class BossLev3:
         self.rect = pygame.Rect(self.pos.x - self.size // 2, self.pos.y - self.size // 2, self.size, self.size)
         
         # Health attributes for the boss
-        self.max_health = 400
-        self.health = 400
-        self.display_health = 400.0
+        self.max_health = 350
+        self.health = 350
+        self.display_health = 350.0
  
         # Class attributes for the boss position while walking/attacking
         self.walk_frames = walk_frames
@@ -220,8 +220,8 @@ class BossLev3:
         if direction.length_squared() == 0:
             return
         
-        # Create a cone of 9 bullets
-        total_bullets = 9
+        # Create a cone of 5 bullets
+        total_bullets = 5
         homing = 3 # 3 out of 9 will follow the player
         spread_angle = 70 # the width of the cone
         
